@@ -5,4 +5,4 @@ This container is a great way to run essential cloud tools such as `kubectl`, `o
 
 The container is built from CentOS Stream 9 and includes EPEL.
 
-A prebuilt container image can be found [here](https://github.com/ryannix123/containertools).
+A prebuilt container image can be found [here](https://quay.io/repository/ryan_nix/containertools)
