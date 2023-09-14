@@ -2,7 +2,7 @@
 FROM quay.io/centos/centos:stream9
 
 RUN dnf -y update && \
-dnf install -y epel-release tar wget sudo gzip git rsync podman bash unzip openssh-clients ansible-core && \
+dnf install -y epel-release vim tar wget sudo gzip git rsync podman bash unzip openssh-clients ansible-core && \
 dnf clean all
 
 RUN mkdir /ocp-tools
