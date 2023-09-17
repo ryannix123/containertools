@@ -20,9 +20,9 @@ mv ./argocd-autopilot-* /usr/local/bin/argocd-autopilot
 
 # Install the latest Kubectl and OpenShift CLI tools
 RUN mkdir /ocp-tools && \
-wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz -P /ocp-tools && \
+wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-arm64.tar.gz -P /ocp-tools && \
 cd /ocp-tools && \
-tar xvzf openshift-client-linux.tar.gz oc kubectl && \
+tar xvzf openshift-client-linux-arm64.tar.gz oc kubectl && \
 chmod 777 * && \
 mv oc kubectl /usr/local/bin
 
