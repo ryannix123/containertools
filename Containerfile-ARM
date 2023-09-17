@@ -14,7 +14,7 @@ rm argocd-darwin-arm64
 
 # Install the latest ArgoCD Autopilot from the official repo
 RUN VERSION=$(curl --silent "https://api.github.com/repos/argoproj-labs/argocd-autopilot/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/') && \
-curl -L --output - https://github.com/argoproj-labs/argocd-autopilot/releases/download/"$VERSION"/argocd-autopilot-darwin-arm64.tar.gz | tar zx && \
+curl -L --output - https://github.com/argoproj-labs/argocd-autopilot/releases/download/"$VERSION"/argocd-autopilot-linux-arm64.tar.gz | tar zx && \
 chmod 555 argocd-autopilot-* && \
 mv ./argocd-autopilot-* /usr/local/bin/argocd-autopilot
 
