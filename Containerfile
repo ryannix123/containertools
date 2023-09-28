@@ -6,6 +6,11 @@ RUN dnf -y update && \
 dnf install -y epel-release vim tar wget sudo gzip git rsync podman bash unzip openssh-clients ansible-core && \
 dnf clean all
 
+# Install the latest version of Source-to-image (s2i)
+RUN curl -s https://api.github.com/repos/openshift/source-to-image/releases/latest| grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4  | wget -qi - && \
+tar xvf source-to-image*.gz && \
+sudo mv s2i /usr/local/bin
+
 # Install the latest ArgoCD from the official Github repo
 RUN curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 && \
 sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd && \
