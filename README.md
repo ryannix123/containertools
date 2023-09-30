@@ -8,3 +8,18 @@ There are tags for x86 and ARM CPUs.
 Build your own on x86 by running `podman build -t containertools -f ./Containerfile`
 
 Build your own on ARM by running `podman build -t containertools -f ./Containerfile-ARM`
+
+Instructions:
+
+Pull the appropriate image for your system's architecture
+`podman pull quay.io/ryan_nix/containertools:x86` or `podman pull quay.io/ryan_nix/containertools:arm`
+
+List images
+`podman images`
+
+Run the container
+`podman run -d -it --name tools quay.io/ryan_nix/containertools:x86` or `podman run -d -it --name tools quay.io/ryan_nix/containertools:arm`
+
+Attach the container
+`podman attach tools`
+
