@@ -1,18 +1,8 @@
-# OpenShift Install
+A container is a great way to run essential cloud tools such as `kubectl`, openshift-cli (`oc`), `ansible-playbook`s, `git`, `wget`, `argocd`, `argocd-autopilot`, AWS's cli (`aws`), Azure's CLI (`az`), `wget`, `rsync`, `tar`, `gzip`, `vim`, and `ssh`.
 
-The OpenShift installer `openshift-install` makes it easy to get a cluster
-running on the public cloud or your local infrastructure.
+The container is built from CentOS Stream 9 and includes EPEL.
 
-To learn more about installing OpenShift, visit [docs.openshift.com](https://docs.openshift.com)
-and select the version of OpenShift you are using.
+You can find the prebuilt containers at my [Quay container repo] (https://quay.io/repository/ryan_nix/containertools).
+There are tags for x86 and ARM CPUs.
 
-## Installing the tools
-
-After extracting this archive, you can move the `openshift-install` binary
-to a location on your PATH such as `/usr/local/bin`, or keep it in a temporary
-directory and reference it via `./openshift-install`.
-
-## License
-
-OpenShift is licensed under the Apache Public License 2.0. The source code for this
-program is [located on github](https://github.com/openshift/installer).
+Here are [Containerfiles](https://github.com/ryannix123/containertools) if you would like to fork or improve it.
