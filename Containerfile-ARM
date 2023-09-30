@@ -6,6 +6,10 @@ RUN dnf -y update && \
 dnf install -y epel-release vim tar wget sudo gzip git rsync podman bash unzip openssh-clients ansible-core && \
 dnf clean all
 
+# Install the latest version of OpenShift Do (odo)
+RUN curl -L https://mirror.openshift.com/pub/openshift-v4/clients/odo/latest/odo-linux-arm64 -o odo && \
+sudo install -o root -g root -m 0755 odo /usr/local/bin/odo
+
 # Install the latest version of Source-to-image (s2i)
 RUN curl -s https://api.github.com/repos/openshift/source-to-image/releases/latest| grep browser_download_url | grep linux-arm64 | cut -d '"' -f 4  | wget -qi - && \
 tar xvf source-to-image*.gz && \

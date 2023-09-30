@@ -4,3 +4,5 @@ The container is built from CentOS Stream 9 and includes EPEL.
 
 The prebuilt containers are found at my [Quay container repo](https://quay.io/repository/ryan_nix/containertools).
 There are tags for x86 and ARM CPUs.
+
+Build your own by running `podman build -t containertools -f ./Containerfile`
