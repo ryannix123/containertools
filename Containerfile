@@ -9,7 +9,8 @@ dnf clean all
 # Install the latest version of Source-to-image (s2i)
 RUN curl -s https://api.github.com/repos/openshift/source-to-image/releases/latest| grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4  | wget -qi - && \
 tar xvf source-to-image*.gz && \
-sudo mv s2i /usr/local/bin
+sudo mv s2i /usr/local/bin && \
+rm source-to-image*.gz
 
 # Install the latest ArgoCD from the official Github repo
 RUN curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 && \
@@ -43,6 +44,7 @@ dnf install -y azure-cli
 #Install the AWS cli
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
 unzip -u awscliv2.zip && \
-sudo ./aws/install
+sudo ./aws/install && \
+rm awscliv2.zip
 
 CMD /bin/bash
