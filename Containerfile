@@ -30,8 +30,8 @@ tar xvzf openshift-client-linux.tar.gz oc kubectl && \
 chmod 777 * && \
 mv oc kubectl /usr/local/bin
 
-#Install the latest version of odo for development
-RUN curl -L https://developers.redhat.com/content-gateway/rest/mirror/pub/openshift-v4/clients/odo/v3.15.0/odo-linux-amd64 -o odo && \
+# Install the latest version of odo for development
+RUN curl -L https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/odo/v3.15.0/odo-linux-amd64.tar.gz -o odo && \
 sudo install -o root -g root -m 0755 odo /usr/local/bin/odo
 
 # Install the main hyperscaler clis
