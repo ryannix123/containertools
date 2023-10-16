@@ -3,12 +3,8 @@ FROM quay.io/centos/centos:stream9
 
 # Update container libraries and install tools available from the repos
 RUN dnf -y update && \
-dnf install -y epel-release vim tar wget sudo gzip git rsync podman bash unzip openssh-clients ansible-core && \
+dnf install -y epel-release vim tar wget java-17-openjdk maven sudo gzip git rsync podman bash unzip openssh-clients ansible-core && \
 dnf clean all
-
-# Install the latest version of OpenShift Do (odo)
-RUN curl -L https://mirror.openshift.com/pub/openshift-v4/clients/odo/latest/odo-linux-amd64 -o odo && \
-sudo install -o root -g root -m 0755 odo /usr/local/bin/odo
 
 # Install the latest version of Source-to-image (s2i)
 RUN curl -s https://api.github.com/repos/openshift/source-to-image/releases/latest| grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4  | wget -qi - && \
@@ -33,6 +29,10 @@ cd /ocp-tools && \
 tar xvzf openshift-client-linux.tar.gz oc kubectl && \
 chmod 777 * && \
 mv oc kubectl /usr/local/bin
+
+#Install the latest version of odo for development
+RUN curl -L https://developers.redhat.com/content-gateway/rest/mirror/pub/openshift-v4/clients/odo/v3.15.0/odo-linux-amd64 -o odo && \
+sudo install -o root -g root -m 0755 odo /usr/local/bin/odo
 
 # Install the main hyperscaler clis
 # Install the Azure cli
