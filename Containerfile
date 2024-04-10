@@ -1,6 +1,9 @@
 # Build on top of base CentOS 9 Stream image for x86
 FROM quay.io/centos/centos:stream9
 
+# Create a non-root user
+RUN useradd -ms /bin/bash tools
+
 # Update container libraries and install tools available from the repos
 RUN dnf -y update && \
 dnf install -y epel-release vim tar wget java-17-openjdk maven sudo gzip git rsync podman bash unzip openssh-clients ansible-core && \
@@ -32,7 +35,7 @@ chmod 777 * && \
 mv oc kubectl /usr/local/bin
 
 # Install the latest version of odo for development
-RUN curl -L https://mirror.openshift.com/pub/openshift-v4/clients/odo/latest/odo-linux-amd64 -o odo && \
+RUN curl -L https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/odo/v3.15.0/odo-linux-amd64.tar.gz -o odo && \
 sudo install -o root -g root -m 0755 odo /usr/local/bin/odo
 
 # Install the main hyperscaler clis
@@ -46,5 +49,8 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
 unzip -u awscliv2.zip && \
 sudo ./aws/install && \
 rm awscliv2.zip
+
+#Switch to non-root user
+USER tools
 
 CMD /bin/bash
