@@ -111,6 +111,42 @@ podman run -d -it --name tools quay.io/ryan_nix/containertools:arm
 ```bash
 podman attach tools
 ```
+## Persistent Storage with Podman
+
+If you want to persist data across container restarts, you can create a Podman volume and mount it inside the container.
+
+### Create a Persistent Volume
+Run the following command to create a named volume:
+```sh
+podman volume create tools-data
+```
+
+### Run the Container with the Persistent Volume
+When starting the container, mount the volume to the desired path:
+```sh
+podman run -it -v tools-data:/home/tools/local-storage my-container-image
+```
+
+### Verify Data Persistence
+To test if the data persists after container restarts:
+1. Start a container with the volume and create a file:
+    ```sh
+    podman run -it -v tools-data:/home/tools/local-storage my-container-image bash
+    echo "Persistent storage test" > /home/tools/local-storage/testfile.txt
+    exit
+    ```
+2. Start another container with the same volume and check the file:
+    ```sh
+    podman run -it -v tools-data:/home/tools/local-storage my-container-image bash
+    cat /home/tools/local-storage/testfile.txt
+    ```
+   You should see `Persistent storage test`, confirming that the data is persistent.
+
+### Access the Volume Data from the Host
+Podman stores volumes in `/var/lib/containers/storage/volumes/`. To access the stored data from the host:
+```sh
+ls /var/lib/containers/storage/volumes/tools-data/_data
+```
 
 To detach from the container without stopping it, press `Ctrl+P` followed by `Ctrl+Q`.
 
@@ -148,40 +184,3 @@ psql -h hostname -U username -d database_name
 ```
 
 You can also use these clients with connection strings stored in your mounted local storage for better security.
-
-## Persistent Storage with Podman
-
-If you want to persist data across container restarts, you can create a Podman volume and mount it inside the container.
-
-### Create a Persistent Volume
-Run the following command to create a named volume:
-```sh
-podman volume create tools-data
-```
-
-### Run the Container with the Persistent Volume
-When starting the container, mount the volume to the desired path:
-```sh
-podman run -it -v tools-data:/home/tools/local-storage my-container-image
-```
-
-### Verify Data Persistence
-To test if the data persists after container restarts:
-1. Start a container with the volume and create a file:
-    ```sh
-    podman run -it -v tools-data:/home/tools/local-storage my-container-image bash
-    echo "Persistent storage test" > /home/tools/local-storage/testfile.txt
-    exit
-    ```
-2. Start another container with the same volume and check the file:
-    ```sh
-    podman run -it -v tools-data:/home/tools/local-storage my-container-image bash
-    cat /home/tools/local-storage/testfile.txt
-    ```
-   You should see `Persistent storage test`, confirming that the data is persistent.
-
-### Access the Volume Data from the Host
-Podman stores volumes in `/var/lib/containers/storage/volumes/`. To access the stored data from the host:
-```sh
-ls /var/lib/containers/storage/volumes/tools-data/_data
-```
