@@ -9,16 +9,77 @@ The container is built from CentOS Stream 9 and includes EPEL.
 The prebuilt containers are found at my [Quay container repo](https://quay.io/repository/ryan_nix/containertools).
 There are tags for x86 and ARM CPUs.
 
-## Building the Container
+## Building and Publishing the Container
 
-The container now uses a unified Containerfile that detects the architecture at build time and installs the appropriate binaries.
+The container uses a unified Containerfile that detects the architecture at build time and installs the appropriate binaries.
+
+### Building Locally
 
 Build the container for your current architecture:
 ```bash
+# Clone the repository if you haven't already
+git clone https://github.com/your-username/containertools.git
+cd containertools
+
+# Build the image
 podman build -t containertools -f ./Containerfile
 ```
 
-## Using the Container
+### Publishing to Quay.io
+
+Complete workflow for building and publishing to Quay.io:
+
+```bash
+# 1. Log in to Quay.io
+podman login quay.io
+
+# 2. Build the container
+podman build -t containertools -f ./Containerfile
+
+# 3. Detect architecture and tag accordingly
+ARCH=$(uname -m)
+if [ "$ARCH" = "aarch64" ]; then
+  podman tag containertools quay.io/your_username/containertools:arm
+else
+  podman tag containertools quay.io/your_username/containertools:x86
+fi
+
+# 4. Push the image to Quay.io
+if [ "$ARCH" = "aarch64" ]; then
+  podman push quay.io/your_username/containertools:arm
+else
+  podman push quay.io/your_username/containertools:x86
+fi
+
+# 5. Optionally tag as latest for your architecture
+podman tag containertools quay.io/your_username/containertools:latest
+podman push quay.io/your_username/containertools:latest
+```
+
+Replace `your_username` with your actual Quay.io username.
+
+### Building Multi-Architecture Images (Advanced)
+
+For more advanced users, you can create a multi-architecture manifest that includes both x86 and ARM versions:
+
+```bash
+# Build on x86 system
+podman build -t quay.io/your_username/containertools:x86 .
+podman push quay.io/your_username/containertools:x86
+
+# Build on ARM system 
+podman build -t quay.io/your_username/containertools:arm .
+podman push quay.io/your_username/containertools:arm
+
+# Create and push the manifest
+podman manifest create quay.io/your_username/containertools:latest \
+  quay.io/your_username/containertools:x86 \
+  quay.io/your_username/containertools:arm
+
+podman manifest push quay.io/your_username/containertools:latest
+```
+
+## Using a Pre-built Container
 
 ### Pull the appropriate image for your system's architecture
 ```bash
@@ -70,54 +131,7 @@ To detach from the container without stopping it, press `Ctrl+P` followed by `Ct
 
 ## Pushing to Quay.io
 
-If you've made changes and want to push your own version to Quay.io:
-
-1. First, log in to Quay.io:
-```bash
-podman login quay.io
-```
-
-2. Tag your local image with your Quay.io repository:
-```bash
-# Detect architecture and tag accordingly
-ARCH=$(uname -m)
-if [ "$ARCH" = "aarch64" ]; then
-  podman tag containertools quay.io/your_username/containertools:arm
-else
-  podman tag containertools quay.io/your_username/containertools:x86
-fi
-```
-
-3. Push the image to Quay.io:
-```bash
-# Push based on detected architecture
-if [ "$ARCH" = "aarch64" ]; then
-  podman push quay.io/your_username/containertools:arm
-else
-  podman push quay.io/your_username/containertools:x86
-fi
-```
-
-### Building Multi-Architecture Images (Advanced)
-
-For more advanced users, you can create a multi-architecture manifest that includes both x86 and ARM versions:
-
-```bash
-# Build on x86 system
-podman build -t quay.io/your_username/containertools:x86 .
-podman push quay.io/your_username/containertools:x86
-
-# Build on ARM system 
-podman build -t quay.io/your_username/containertools:arm .
-podman push quay.io/your_username/containertools:arm
-
-# Create and push the manifest
-podman manifest create quay.io/your_username/containertools:latest \
-  quay.io/your_username/containertools:x86 \
-  quay.io/your_username/containertools:arm
-
-podman manifest push quay.io/your_username/containertools:latest
-```
+For additional instructions about publishing to Quay.io, see the "Building and Publishing the Container" section above, which includes a complete workflow.
 
 ## Available Tools
 
