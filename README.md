@@ -2,7 +2,7 @@
 
 [![Docker Repository on Quay](https://quay.io/repository/ryan_nix/containertools/status "Docker Repository on Quay")](https://quay.io/repository/ryan_nix/containertools)
 
-A container is a great way to run essential cloud tools such as `kubectl`, openshift-cli (`oc`), OpenShift Do - for rapid application development against a Kubernetes namespace (`odo`), `ansible-playbook`s, `git`, `wget`, `argocd`, `argocd-autopilot`, AWS's cli (`aws`), Azure's CLI (`az`), `wget`, `rsync`, `tar`, `gzip`, `vim`, `ssh`, and now including `terraform`.
+A container is a great way to run essential cloud tools such as `kubectl`, openshift-cli (`oc`), OpenShift Do - for rapid application development against a Kubernetes namespace (`odo`), `ansible-playbook`s, `git`, `wget`, `argocd`, `argocd-autopilot`, AWS's cli (`aws`), Azure's CLI (`az`), `wget`, `rsync`, `tar`, `gzip`, `vim`, `ssh`, `terraform`, and database clients (`mysql`, `psql`).
 
 The container is built from CentOS Stream 9 and includes EPEL.
 
@@ -11,14 +11,11 @@ There are tags for x86 and ARM CPUs.
 
 ## Building the Container
 
-Build your own on x86 by running:
+The container now uses a unified Containerfile that detects the architecture at build time and installs the appropriate binaries.
+
+Build the container for your current architecture:
 ```bash
 podman build -t containertools -f ./Containerfile
-```
-
-Build your own on ARM by running:
-```bash
-podman build -t containertools -f ./Containerfile-ARM
 ```
 
 ## Using the Container
@@ -82,20 +79,44 @@ podman login quay.io
 
 2. Tag your local image with your Quay.io repository:
 ```bash
-podman tag containertools quay.io/your_username/containertools:x86
-```
-or
-```bash
-podman tag containertools quay.io/your_username/containertools:arm
+# Detect architecture and tag accordingly
+ARCH=$(uname -m)
+if [ "$ARCH" = "aarch64" ]; then
+  podman tag containertools quay.io/your_username/containertools:arm
+else
+  podman tag containertools quay.io/your_username/containertools:x86
+fi
 ```
 
 3. Push the image to Quay.io:
 ```bash
-podman push quay.io/your_username/containertools:x86
+# Push based on detected architecture
+if [ "$ARCH" = "aarch64" ]; then
+  podman push quay.io/your_username/containertools:arm
+else
+  podman push quay.io/your_username/containertools:x86
+fi
 ```
-or
+
+### Building Multi-Architecture Images (Advanced)
+
+For more advanced users, you can create a multi-architecture manifest that includes both x86 and ARM versions:
+
 ```bash
+# Build on x86 system
+podman build -t quay.io/your_username/containertools:x86 .
+podman push quay.io/your_username/containertools:x86
+
+# Build on ARM system 
+podman build -t quay.io/your_username/containertools:arm .
 podman push quay.io/your_username/containertools:arm
+
+# Create and push the manifest
+podman manifest create quay.io/your_username/containertools:latest \
+  quay.io/your_username/containertools:x86 \
+  quay.io/your_username/containertools:arm
+
+podman manifest push quay.io/your_username/containertools:latest
 ```
 
 ## Available Tools
@@ -108,6 +129,23 @@ This container includes:
 - Azure CLI (az)
 - terraform
 - ansible-core
+- Database clients (mysql and psql for PostgreSQL)
 - git, vim, wget, rsync, tar, gzip, ssh
 - Java 17 OpenJDK and Maven
 - And more!
+
+## Connecting to Databases
+
+The container includes client tools for connecting to MySQL and PostgreSQL databases:
+
+### MySQL
+```bash
+mysql -h hostname -u username -p database_name
+```
+
+### PostgreSQL
+```bash
+psql -h hostname -U username -d database_name
+```
+
+You can also use these clients with connection strings stored in your mounted local storage for better security.
