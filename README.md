@@ -107,23 +107,6 @@ or
 podman run -d -it --name tools quay.io/ryan_nix/containertools:arm
 ```
 
-### Run with local storage mounted
-First, create a local directory to store files (if it doesn't exist):
-```bash
-mkdir -p ~/container-storage
-```
-
-Then run the container with this directory mounted:
-```bash
-podman run -d -it --name tools -v ~/container-storage:/home/tools/local-storage quay.io/ryan_nix/containertools:x86
-```
-or
-```bash
-podman run -d -it --name tools -v ~/container-storage:/home/tools/local-storage quay.io/ryan_nix/containertools:arm
-```
-
-Any files placed in `~/container-storage` on your host system will be accessible inside the container at `/home/tools/local-storage`.
-
 ### Attach to the container
 ```bash
 podman attach tools
