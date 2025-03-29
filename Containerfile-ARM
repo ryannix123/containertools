@@ -13,12 +13,6 @@ dnf clean all
 RUN curl -L https://developers.redhat.com/content-gateway/rest/mirror/pub/openshift-v4/clients/odo/v3.15.0/odo-linux-arm64 -o odo && \
 sudo install -o root -g root -m 0755 odo /usr/local/bin/odo
 
-# Install the latest version of Source-to-image (s2i)
-RUN curl -s https://api.github.com/repos/openshift/source-to-image/releases/latest| grep browser_download_url | grep linux-arm64 | cut -d '"' -f 4  | wget -qi - && \
-tar xvf source-to-image*.gz && \
-sudo mv s2i /usr/local/bin && \
-rm source-to-image*.gz
-
 # Install the latest ArgoCD from the official Github repo
 RUN VERSION=$(curl --silent "https://api.github.com/repos/argoproj/argo-cd/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/') && \
 curl -sSL -o argocd-linux-arm64 https://github.com/argoproj/argo-cd/releases/download/$VERSION/argocd-linux-arm64 && \
