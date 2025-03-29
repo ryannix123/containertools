@@ -36,16 +36,18 @@ podman login quay.io
 # 2. Build the container
 podman build -t containertools -f ./Containerfile
 
-# 3. Detect architecture and tag accordingly
+# 3. Detect architecture and tag accordingly (improved for Apple Silicon)
 ARCH=$(uname -m)
-if [ "$ARCH" = "aarch64" ]; then
+if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+  echo "Tagging as ARM architecture"
   podman tag containertools quay.io/your_username/containertools:arm
 else
+  echo "Tagging as x86 architecture"
   podman tag containertools quay.io/your_username/containertools:x86
 fi
 
 # 4. Push the image to Quay.io
-if [ "$ARCH" = "aarch64" ]; then
+if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
   podman push quay.io/your_username/containertools:arm
 else
   podman push quay.io/your_username/containertools:x86

@@ -11,9 +11,19 @@ RUN dnf -y update && \
     mysql postgresql && \
     dnf clean all
 
-# Install the latest ArgoCD (architecture-specific)
+# Detect architecture early to use throughout the build
 RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ]; then \
+    echo "Detected architecture: $ARCH" && \
+    # ARM64 can be reported as 'arm64' or 'aarch64' depending on the system
+    if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then \
+        echo "ARM64 architecture detected" && \
+        touch /tmp/is_arm64; \
+    else \
+        echo "x86_64 architecture detected"; \
+    fi
+
+# Install the latest ArgoCD (architecture-specific)
+RUN if [ -f /tmp/is_arm64 ]; then \
       curl -sSL -o argocd-linux-arm64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-arm64 && \
       sudo install -m 555 argocd-linux-arm64 /usr/local/bin/argocd && \
       rm argocd-linux-arm64; \
@@ -25,8 +35,7 @@ RUN ARCH=$(uname -m) && \
 
 # Install the latest ArgoCD Autopilot (architecture-specific)
 RUN VERSION=$(curl --silent "https://api.github.com/repos/argoproj-labs/argocd-autopilot/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/') && \
-    ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ]; then \
+    if [ -f /tmp/is_arm64 ]; then \
       curl -L --output - https://github.com/argoproj-labs/argocd-autopilot/releases/download/"$VERSION"/argocd-autopilot-linux-arm64.tar.gz | tar zx; \
     else \
       curl -L --output - https://github.com/argoproj-labs/argocd-autopilot/releases/download/"$VERSION"/argocd-autopilot-linux-amd64.tar.gz | tar zx; \
@@ -36,8 +45,7 @@ RUN VERSION=$(curl --silent "https://api.github.com/repos/argoproj-labs/argocd-a
 
 # Install the latest Kubectl and OpenShift CLI tools (architecture-specific)
 RUN mkdir /ocp-tools && \
-    ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ]; then \
+    if [ -f /tmp/is_arm64 ]; then \
       wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-arm64.tar.gz -P /ocp-tools; \
     else \
       wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz -P /ocp-tools; \
@@ -48,8 +56,7 @@ RUN mkdir /ocp-tools && \
     mv oc kubectl /usr/local/bin
 
 # Install the latest version of odo for development (architecture-specific)
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ]; then \
+RUN if [ -f /tmp/is_arm64 ]; then \
       curl -L https://developers.redhat.com/content-gateway/rest/mirror/pub/openshift-v4/clients/odo/v3.15.0/odo-linux-arm64 -o odo; \
     else \
       curl -L https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/odo/v3.15.0/odo-linux-amd64.tar.gz -o odo.tar.gz && \
@@ -65,8 +72,7 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
     dnf install -y azure-cli
 
 # Install the AWS CLI (architecture-specific)
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ]; then \
+RUN if [ -f /tmp/is_arm64 ]; then \
       curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"; \
     else \
       curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"; \
@@ -76,8 +82,7 @@ RUN ARCH=$(uname -m) && \
     rm awscliv2.zip
 
 # Install Terraform (architecture-specific)
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ]; then \
+RUN if [ -f /tmp/is_arm64 ]; then \
       curl -O https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_linux_arm64.zip && \
       unzip terraform_1.7.5_linux_arm64.zip; \
     else \
