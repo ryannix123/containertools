@@ -151,15 +151,15 @@ When starting the container, mount the volume to the desired path:
 
 ```sh
 # Run interactively (you'll immediately enter the container)
-podman run -it -v tools-data:/home/tools/local-storage my-container-image
+podman run -it --name tools -v tools-data:/home/tools/local-storage quay.io/ryan_nix/containertools:arm
 
 # OR run in the background (detached mode)
-podman run -d -it -v tools-data:/home/tools/local-storage my-container-image
+podman run -d -it --name tools -v tools-data:/home/tools/local-storage quay.io/ryan_nix/containertools:arm
 ```
 
 If you run the container in detached mode, you can later connect to it using:
 ```sh
-podman attach my-container-name
+podman attach name-of-your-running-container
 ```
 
 ### Verify Data Persistence
