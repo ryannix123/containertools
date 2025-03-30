@@ -13,11 +13,6 @@ RUN dnf install -y epel-release && \
       python3 python3-pip python3-devel && \
     dnf clean all
 
-# Install Python packages
-RUN pip3 install --upgrade pip && \
-    pip3 install boto3 botocore && \
-    ansible-galaxy collection install amazon.aws
-
 # Install latest ArgoCD
 RUN curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 && \
     install -m 555 argocd /usr/local/bin/argocd && rm argocd
@@ -68,5 +63,10 @@ USER tools
 
 # Set WORKDIR
 WORKDIR /home/tools
+
+# Install Python packages as the tools user
+RUN pip3 install --user --upgrade pip && \
+    pip3 install --user boto3 botocore && \
+    ansible-galaxy collection install amazon.aws
 
 CMD ["/bin/bash"]
