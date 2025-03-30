@@ -11,10 +11,10 @@ RUN dnf install -y epel-release && \
       vim tar wget java-17-openjdk maven sudo gzip git rsync podman bash unzip openssh-clients \
       mysql postgresql \
       python3 python3-pip python3-devel && \
-    dnf install -y dnf-plugins-core && \
-    dnf config-manager --add-repo https://rpm.releases.ansible.com/ansible-automation-platform/rpm/epel-9-x86_64/ansible-automation-platform-2.4.repo && \
-    dnf install -y ansible && \
     dnf clean all
+
+# Install Ansible via pip (more reliable than RPM repositories)
+RUN pip3 install ansible==9.2.0
 
 # Install latest ArgoCD
 RUN curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 && \
@@ -58,7 +58,7 @@ RUN dnf install -y yum-utils && \
     dnf install -y terraform && \
     dnf clean all
 
-# Create a directory for optional local storage mount
+# Create directory for optional local storage mount
 RUN mkdir -p /home/tools/local-storage && chown -R tools:tools /home/tools/local-storage
 
 # Switch to non-root user
@@ -67,9 +67,9 @@ USER tools
 # Set WORKDIR
 WORKDIR /home/tools
 
-# Install Python packages as the tools user
+# Install Python packages and Ansible collections as the tools user
 RUN pip3 install --user --upgrade pip && \
     pip3 install --user boto3 botocore && \
-    ansible-galaxy collection install ansible.posix amazon.aws
+    ansible-galaxy collection install ansible.posix amazon.aws community.general community.crypto ansible.utils community.docker kubernetes.core
 
 CMD ["/bin/bash"]
