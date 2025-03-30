@@ -143,13 +143,29 @@ To test if the data persists after container restarts:
    You should see `Persistent storage test`, confirming that the data is persistent.
 
 ### Access the Volume Data from the Host
+
+#### **Linux Users**
 Podman stores volumes in `/var/lib/containers/storage/volumes/`. To access the stored data from the host:
 ```sh
 ls /var/lib/containers/storage/volumes/tools-data/_data
 ```
 
-To detach from the container without stopping it, press `Ctrl+P` followed by `Ctrl+Q`.
+#### **macOS Users**
+Since Podman runs inside a virtual machine (VM) on macOS, volumes are not directly accessible from the host filesystem. To access the volume data:
 
+1. Find the volume mount location inside the Podman VM:
+    ```sh
+    podman volume inspect tools-data
+    ```
+2. SSH into the Podman VM:
+    ```sh
+    podman machine ssh
+    ```
+3. Navigate to the volume's storage path inside the VM, which will be under `/var/lib/containers/storage/volumes/`:
+    ```sh
+    ls /var/lib/containers/storage/volumes/tools-data/_data
+    ```
+    
 ## Pushing to Quay.io
 
 For additional instructions about publishing to Quay.io, see the "Building and Publishing the Container" section above, which includes a complete workflow.
