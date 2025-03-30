@@ -24,9 +24,10 @@ cd containertools
 
 # Detect architecture
 ARCH=$(uname -m)
+echo "Detected architecture: $ARCH"
 
 # Build the appropriate image based on architecture
-if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm" ]; then
   echo "Building ARM image"
   podman build -t containertools:arm -f ./Containerfile.arm
 else
@@ -45,7 +46,9 @@ podman login quay.io
 
 # 2. Detect architecture and build appropriate image
 ARCH=$(uname -m)
-if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+echo "Detected architecture: $ARCH"
+
+if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm" ]; then
   echo "Building ARM architecture image"
   podman build -t containertools:arm -f ./Containerfile.arm
   # Tag with the Quay.io repository name
