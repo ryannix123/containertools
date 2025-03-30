@@ -62,22 +62,55 @@ Replace `your_username` with your actual Quay.io username.
 
 ### Building Multi-Architecture Images (Advanced)
 
-For more advanced users, you can create a multi-architecture manifest that includes both x86 and ARM versions:
+Podman 4.0 and newer supports building and pushing multi-architecture container images. Here's how to build multi-architecture images correctly:
 
 ```bash
-# Build on x86 system
-podman build -t quay.io/your_username/containertools:x86 .
-podman push quay.io/your_username/containertools:x86
+# 1. Create a new manifest list
+podman manifest create quay.io/your_username/containertools:latest
 
-# Build on ARM system 
-podman build -t quay.io/your_username/containertools:arm .
-podman push quay.io/your_username/containertools:arm
+# 2. Build for x86_64 architecture
+podman build --platform=linux/amd64 --manifest quay.io/your_username/containertools:latest .
 
-# Create and push the manifest
-podman manifest create quay.io/your_username/containertools:latest \
-  quay.io/your_username/containertools:x86 \
-  quay.io/your_username/containertools:arm
+# 3. Build for ARM64 architecture
+podman build --platform=linux/arm64 --manifest quay.io/your_username/containertools:latest .
 
+# 4. Push the complete manifest to the registry
+podman manifest push quay.io/your_username/containertools:latest
+```
+
+Note that you need to have QEMU emulation support installed for cross-architecture builds. On most Linux distributions, you can install this with:
+
+```bash
+sudo dnf install qemu-user-static
+```
+
+For macOS users with Podman Desktop or Podman Machine:
+```bash
+# The QEMU emulator should be included with Podman Machine by default
+# Verify it's working with:
+podman machine ssh
+ls -la /usr/bin/qemu-*
+```
+
+If you experience issues with the cross-platform builds, you can also build the images separately and then combine them into a manifest:
+
+```bash
+# Build and push x86_64 image
+podman build --platform=linux/amd64 -t quay.io/your_username/containertools:amd64 .
+podman push quay.io/your_username/containertools:amd64
+
+# Build and push ARM64 image
+podman build --platform=linux/arm64 -t quay.io/your_username/containertools:arm64 .
+podman push quay.io/your_username/containertools:arm64
+
+# Create a manifest list
+podman manifest create quay.io/your_username/containertools:latest
+
+# Add the images to the manifest
+podman manifest add quay.io/your_username/containertools:latest quay.io/your_username/containertools:amd64
+podman manifest add quay.io/your_username/containertools:latest quay.io/your_username/containertools:arm64
+
+# Push the manifest
 podman manifest push quay.io/your_username/containertools:latest
 ```
 
@@ -172,7 +205,7 @@ For additional instructions about publishing to Quay.io, see the "Building and P
 
 ## Available Tools
 
-This container includes:
+This container includes the latest builds of:
 - kubectl and oc (OpenShift CLI)
 - odo (OpenShift Do for developers)
 - argocd and argocd-autopilot
