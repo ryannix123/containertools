@@ -148,14 +148,25 @@ podman volume create tools-data
 
 ### Run the Container with the Persistent Volume
 When starting the container, mount the volume to the desired path:
+
 ```sh
+# Run interactively (you'll immediately enter the container)
 podman run -it -v tools-data:/home/tools/local-storage my-container-image
+
+# OR run in the background (detached mode)
+podman run -d -it -v tools-data:/home/tools/local-storage my-container-image
+```
+
+If you run the container in detached mode, you can later connect to it using:
+```sh
+podman attach my-container-name
 ```
 
 ### Verify Data Persistence
 To test if the data persists after container restarts:
 1. Start a container with the volume and create a file:
     ```sh
+    # Interactive mode for testing
     podman run -it -v tools-data:/home/tools/local-storage my-container-image bash
     echo "Persistent storage test" > /home/tools/local-storage/testfile.txt
     exit
@@ -166,6 +177,19 @@ To test if the data persists after container restarts:
     cat /home/tools/local-storage/testfile.txt
     ```
    You should see `Persistent storage test`, confirming that the data is persistent.
+
+### Copying Data to the Container
+To copy files from your host machine to the container:
+
+```sh
+# Copy a single file to the container's volume
+podman cp ~/path/to/yourfile tools:/home/tools/local-storage/
+
+# Copy the directory including its name (recursive copy)
+podman cp ~/path/to/your/directory tools:/home/tools/local-storage/
+```
+
+This works for both Linux and macOS users, and is the simplest way to transfer files to your container.
 
 ### Access the Volume Data from the Host
 
