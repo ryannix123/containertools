@@ -26,7 +26,7 @@ RUN VERSION=$(curl -s https://api.github.com/repos/argoproj-labs/argocd-autopilo
 # Install latest OpenShift CLI (oc) and kubectl
 RUN mkdir /ocp-tools && \
     wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz -P /ocp-tools && \
-    tar xvzf /ocp-tools/openshift-client-linux-*.tar.gz -C /ocp-tools oc kubectl && \
+    tar xvzf /ocp-tools/openshift-client-linux.tar.gz -C /ocp-tools oc kubectl && \
     install -m 755 /ocp-tools/oc /usr/local/bin/oc && \
     install -m 755 /ocp-tools/kubectl /usr/local/bin/kubectl && \
     rm -rf /ocp-tools
