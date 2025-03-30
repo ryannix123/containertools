@@ -9,8 +9,14 @@ RUN dnf install -y epel-release && \
     dnf update -y && \
     dnf install -y \
       vim tar wget java-17-openjdk maven sudo gzip git rsync podman bash unzip openssh-clients ansible-core \
-      mysql postgresql && \
+      mysql postgresql \
+      python3 python3-pip python3-devel && \
     dnf clean all
+
+# Install Python packages
+RUN pip3 install --upgrade pip && \
+    pip3 install boto3 botocore && \
+    ansible-galaxy collection install amazon.aws
 
 # Detect architecture and set environment variable
 ARG ARCH
