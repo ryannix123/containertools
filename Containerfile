@@ -73,14 +73,11 @@ RUN ARCH=$(cat /tmp/arch) && \
     ./aws/install && \
     rm -rf aws awscliv2.zip
 
-# Install latest Terraform
-RUN ARCH=$(cat /tmp/arch) && \
-    TERRAFORM_VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | \
-      grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/') && \
-    curl -O https://releases.hashicorp.com/terraform/$TERRAFORM_VERSION/terraform_${TERRAFORM_VERSION}_linux_$ARCH.zip && \
-    unzip terraform_${TERRAFORM_VERSION}_linux_$ARCH.zip && \
-    install -m 0755 terraform /usr/local/bin/terraform && \
-    rm terraform terraform_*.zip
+# Install Terraform from the official HashiCorp RPM repository
+RUN dnf install -y yum-utils && \
+    yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && \
+    dnf install -y terraform && \
+    dnf clean all
 
 # Create directory for optional local storage mount
 RUN mkdir -p /home/tools/local-storage && chown -R tools:tools /home/tools/local-storage
