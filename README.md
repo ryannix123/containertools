@@ -46,13 +46,17 @@ podman login quay.io
 # 2. Detect architecture and build appropriate image
 ARCH=$(uname -m)
 if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
-  echo "Building and tagging ARM architecture"
-  podman build -t quay.io/your_username/containertools:arm -f ./Containerfile.arm
+  echo "Building ARM architecture image"
+  podman build -t containertools:arm -f ./Containerfile.arm
+  # Tag with the Quay.io repository name
+  podman tag containertools:arm quay.io/your_username/containertools:arm
   # Push the image to Quay.io
   podman push quay.io/your_username/containertools:arm
 else
-  echo "Building and tagging x86 architecture"
-  podman build -t quay.io/your_username/containertools:x86 -f ./Containerfile.x86
+  echo "Building x86 architecture image"
+  podman build -t containertools:x86 -f ./Containerfile.x86
+  # Tag with the Quay.io repository name
+  podman tag containertools:x86 quay.io/your_username/containertools:x86
   # Push the image to Quay.io
   podman push quay.io/your_username/containertools:x86
 fi
@@ -71,11 +75,13 @@ sudo dnf install qemu-user-static
 
 # 2. Build and push images separately
 # For x86_64 (native or emulated)
-podman build -t quay.io/your_username/containertools:x86 -f ./Containerfile.x86
+podman build -t containertools:x86 -f ./Containerfile.x86
+podman tag containertools:x86 quay.io/your_username/containertools:x86
 podman push quay.io/your_username/containertools:x86
 
 # For ARM64 (native or emulated)
-podman build -t quay.io/your_username/containertools:arm -f ./Containerfile.arm
+podman build -t containertools:arm -f ./Containerfile.arm
+podman tag containertools:arm quay.io/your_username/containertools:arm
 podman push quay.io/your_username/containertools:arm
 
 # 3. Create a manifest list
