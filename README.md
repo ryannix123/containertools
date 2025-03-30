@@ -11,18 +11,28 @@ There are tags for x86 and ARM CPUs.
 
 ## Building and Publishing the Container
 
-The container uses a unified Containerfile that detects the architecture at build time and installs the appropriate binaries.
+The container now uses separate Containerfiles for each architecture to simplify maintenance and troubleshooting.
 
 ### Building Locally
 
-Build the container for your current architecture:
+Build the container for your architecture:
+
 ```bash
 # Clone the repository if you haven't already
 git clone https://github.com/your-username/containertools.git
 cd containertools
 
-# Build the image
-podman build -t containertools -f ./Containerfile
+# Detect architecture
+ARCH=$(uname -m)
+
+# Build the appropriate image based on architecture
+if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+  echo "Building ARM image"
+  podman build -t containertools:arm -f ./Containerfile.arm
+else
+  echo "Building x86 image"
+  podman build -t containertools:x86 -f ./Containerfile.x86
+fi
 ```
 
 ### Publishing to Quay.io
@@ -33,55 +43,50 @@ Complete workflow for building and publishing to Quay.io:
 # 1. Log in to Quay.io
 podman login quay.io
 
-# 2. Build the container
-podman build -t containertools -f ./Containerfile
-
-# 3. Detect architecture and tag accordingly (improved for Apple Silicon)
+# 2. Detect architecture and build appropriate image
 ARCH=$(uname -m)
 if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
-  echo "Tagging as ARM architecture"
-  podman tag containertools quay.io/your_username/containertools:arm
-else
-  echo "Tagging as x86 architecture"
-  podman tag containertools quay.io/your_username/containertools:x86
-fi
-
-# 4. Push the image to Quay.io
-if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+  echo "Building and tagging ARM architecture"
+  podman build -t quay.io/your_username/containertools:arm -f ./Containerfile.arm
+  # Push the image to Quay.io
   podman push quay.io/your_username/containertools:arm
 else
+  echo "Building and tagging x86 architecture"
+  podman build -t quay.io/your_username/containertools:x86 -f ./Containerfile.x86
+  # Push the image to Quay.io
   podman push quay.io/your_username/containertools:x86
 fi
-
-# 5. Optionally tag as latest for your architecture
-podman tag containertools quay.io/your_username/containertools:latest
-podman push quay.io/your_username/containertools:latest
 ```
 
 Replace `your_username` with your actual Quay.io username.
 
 ### Building Multi-Architecture Images (Advanced)
 
-Podman 4.0 and newer supports building and pushing multi-architecture container images. Here's how to build multi-architecture images correctly:
+For those who need to build multi-architecture images on a single system, you'll need to use a build environment with QEMU support:
 
 ```bash
-# 1. Create a new manifest list
+# 1. Install QEMU support (if not already installed)
+# For RHEL/CentOS/Fedora:
+sudo dnf install qemu-user-static
+
+# 2. Build and push images separately
+# For x86_64 (native or emulated)
+podman build -t quay.io/your_username/containertools:x86 -f ./Containerfile.x86
+podman push quay.io/your_username/containertools:x86
+
+# For ARM64 (native or emulated)
+podman build -t quay.io/your_username/containertools:arm -f ./Containerfile.arm
+podman push quay.io/your_username/containertools:arm
+
+# 3. Create a manifest list
 podman manifest create quay.io/your_username/containertools:latest
 
-# 2. Build for x86_64 architecture
-podman build --platform=linux/amd64 --manifest quay.io/your_username/containertools:latest .
+# 4. Add the images to the manifest
+podman manifest add quay.io/your_username/containertools:latest quay.io/your_username/containertools:x86
+podman manifest add quay.io/your_username/containertools:latest quay.io/your_username/containertools:arm
 
-# 3. Build for ARM64 architecture
-podman build --platform=linux/arm64 --manifest quay.io/your_username/containertools:latest .
-
-# 4. Push the complete manifest to the registry
+# 5. Push the manifest
 podman manifest push quay.io/your_username/containertools:latest
-```
-
-Note that you need to have QEMU emulation support installed for cross-architecture builds. On most Linux distributions, you can install this with:
-
-```bash
-sudo dnf install qemu-user-static
 ```
 
 For macOS users with Podman Desktop or Podman Machine:
@@ -90,28 +95,6 @@ For macOS users with Podman Desktop or Podman Machine:
 # Verify it's working with:
 podman machine ssh
 ls -la /usr/bin/qemu-*
-```
-
-If you experience issues with the cross-platform builds, you can also build the images separately and then combine them into a manifest:
-
-```bash
-# Build and push x86_64 image
-podman build --platform=linux/amd64 -t quay.io/your_username/containertools:amd64 .
-podman push quay.io/your_username/containertools:amd64
-
-# Build and push ARM64 image
-podman build --platform=linux/arm64 -t quay.io/your_username/containertools:arm64 .
-podman push quay.io/your_username/containertools:arm64
-
-# Create a manifest list
-podman manifest create quay.io/your_username/containertools:latest
-
-# Add the images to the manifest
-podman manifest add quay.io/your_username/containertools:latest quay.io/your_username/containertools:amd64
-podman manifest add quay.io/your_username/containertools:latest quay.io/your_username/containertools:arm64
-
-# Push the manifest
-podman manifest push quay.io/your_username/containertools:latest
 ```
 
 ## Using a Pre-built Container
@@ -212,7 +195,8 @@ This container includes the latest builds of:
 - AWS CLI (aws)
 - Azure CLI (az)
 - terraform
-- ansible-core
+- ansible-core with amazon.aws collection
+- Python 3 with boto3 and botocore packages
 - Database clients (mysql and psql for PostgreSQL)
 - git, vim, wget, rsync, tar, gzip, ssh
 - Java 17 OpenJDK and Maven
