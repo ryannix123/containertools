@@ -8,9 +8,12 @@ RUN useradd -ms /bin/bash tools
 RUN dnf install -y epel-release && \
     dnf update -y && \
     dnf install -y \
-      vim tar wget java-17-openjdk maven sudo gzip git rsync podman bash unzip openssh-clients ansible-core \
+      vim tar wget java-17-openjdk maven sudo gzip git rsync podman bash unzip openssh-clients \
       mysql postgresql \
       python3 python3-pip python3-devel && \
+    dnf install -y dnf-plugins-core && \
+    dnf config-manager --add-repo https://rpm.releases.ansible.com/ansible-automation-platform/rpm/epel-9-x86_64/ansible-automation-platform-2.4.repo && \
+    dnf install -y ansible && \
     dnf clean all
 
 # Install latest ArgoCD
@@ -55,7 +58,7 @@ RUN dnf install -y yum-utils && \
     dnf install -y terraform && \
     dnf clean all
 
-# Create directory for optional local storage mount
+# Create a directory for optional local storage mount
 RUN mkdir -p /home/tools/local-storage && chown -R tools:tools /home/tools/local-storage
 
 # Switch to non-root user
@@ -67,6 +70,6 @@ WORKDIR /home/tools
 # Install Python packages as the tools user
 RUN pip3 install --user --upgrade pip && \
     pip3 install --user boto3 botocore && \
-    ansible-galaxy collection install amazon.aws
+    ansible-galaxy collection install ansible.posix amazon.aws
 
 CMD ["/bin/bash"]
