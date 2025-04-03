@@ -82,6 +82,6 @@ ENV PATH="/home/tools/.local/bin:${PATH}"
 # Install Python packages and Ansible as the tools user
 RUN pip3 install --user --upgrade pip && \
     pip3 install --user ansible==8.7.0 boto3 botocore && \
-    ansible-galaxy collection install ansible.posix amazon.aws community.general community.crypto ansible.utils community.docker kubernetes.core
+    ansible-galaxy collection install ansible.posix amazon.aws azure.azcollection community.general community.crypto ansible.utils community.docker kubernetes.core
 
 CMD ["/bin/bash"]
