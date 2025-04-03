@@ -55,6 +55,18 @@ RUN dnf install -y yum-utils && \
     dnf install -y terraform && \
     dnf clean all
 
+# Install Knative CLI (kn)
+RUN curl -L https://github.com/knative/client/releases/download/knative-v1.12.0/kn-linux-arm64 -o kn && \
+    chmod +x kn && \
+    mv kn /usr/local/bin/
+
+# Install Fortio
+RUN curl -L https://github.com/fortio/fortio/releases/download/v1.63.0/fortio-linux_arm64-1.63.0.tgz -o fortio.tgz && \
+    tar -xzf fortio.tgz --strip-components=2 usr/bin/fortio && \
+    chmod +x fortio && \
+    mv fortio /usr/local/bin/ && \
+    rm fortio.tgz
+
 # Create directory for optional local storage mount
 RUN mkdir -p /home/tools/local-storage && chown -R tools:tools /home/tools/local-storage
 
