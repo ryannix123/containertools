@@ -32,7 +32,7 @@ RUN mkdir /ocp-tools && \
     rm -rf /ocp-tools
 
 # Install latest odo CLI
-RUN curl -L https://developers.redhat.com/content-gateway/rest/mirror/pub/openshift-v4/clients/odo/v3.15.0/odo-linux-amd64 -o odo && \
+RUN curl -L https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/odo/v3.16.1/odo-linux-amd64 -o odo && \
     install -m 0755 odo /usr/local/bin/odo && rm odo
 
 # Install Azure CLI
@@ -81,7 +81,15 @@ ENV PATH="/home/tools/.local/bin:${PATH}"
 
 # Install Python packages and Ansible as the tools user
 RUN pip3 install --user --upgrade pip && \
-    pip3 install --user ansible==8.7.0 boto3 botocore && \
-    ansible-galaxy collection install ansible.posix amazon.aws azure.azcollection community.general community.crypto ansible.utils community.docker kubernetes.core
+    pip3 install --user ansible==8.7.0 boto3 botocore \
+    packaging msrest msrestazure requests[security] xmltodict \
+    azure-mgmt-compute azure-mgmt-storage azure-mgmt-resource azure-mgmt-network \
+    azure-mgmt-containerservice azure-identity azure-common azure-mgmt-core \
+    azure-mgmt-authorization azure-mgmt-containerinstance azure-mgmt-containerregistry \
+    azure-mgmt-dns azure-mgmt-web && \
+    ansible-galaxy collection install ansible.posix amazon.aws azure.azcollection community.general community.crypto ansible.utils community.docker kubernetes.core --force && \
+    # Install the Azure dependencies from the collection requirements file
+    test -f ~/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt && \
+    pip3 install --user -r ~/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt || echo "Azure requirements file not found"
 
 CMD ["/bin/bash"]
