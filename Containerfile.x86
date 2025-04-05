@@ -95,7 +95,7 @@ RUN curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.21.0 TARGET_ARCH=x8
     rm -rf istio-1.21.0
 
 # Install Fortio
-RUN curl -L https://github.com/fortio/fortio/releases/download/v1.63.0/fortio-linux_x64-1.63.0.tgz -o fortio.tgz && \
+RUN curl -L https://github.com/fortio/fortio/releases/download/v1.68.0/fortio-linux_amd64-1.68.0.tgz -o fortio.tgz && \
     tar -xzf fortio.tgz --strip-components=2 usr/bin/fortio && \
     chmod +x fortio && \
     mv fortio /usr/local/bin/ && \
