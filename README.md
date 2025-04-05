@@ -9,6 +9,42 @@ The container is built from CentOS Stream 9 and includes EPEL.
 The prebuilt containers are found at my [Quay container repo](https://quay.io/repository/ryan_nix/containertools).
 There are tags for x86 and ARM CPUs.
 
+## Included Tools
+
+| Category | Tool | Description |
+|----------|------|-------------|
+| **Kubernetes & OpenShift** | kubectl | Kubernetes command-line tool |
+| | oc | OpenShift CLI |
+| | odo | OpenShift Do for developers |
+| | helm | Kubernetes package manager |
+| | istioctl | Service mesh management tool |
+| | tkn | Tekton Pipelines CLI |
+| **GitOps & CI/CD** | argocd | Argo CD command-line tool |
+| | argocd-autopilot | GitOps bootstrapping tool |
+| | kn | Knative CLI for serverless workloads |
+| | func | Knative Functions CLI plugin |
+| **Cloud Provider Tools** | aws | AWS command-line interface |
+| | az | Azure command-line interface |
+| **Infrastructure as Code** | terraform | Infrastructure as code tool |
+| | ansible | IT automation platform |
+| **Languages & Runtimes** | python3 | Python interpreter & package manager |
+| | nodejs | JavaScript runtime |
+| | npm | Node.js package manager |
+| | java-17-openjdk | Java Development Kit |
+| | maven | Java build tool |
+| **Database Clients** | mysql | MySQL command-line client |
+| | psql | PostgreSQL command-line client |
+| **Core Utilities** | git | Version control system |
+| | vim | Text editor |
+| | tar/gzip | File compression tools |
+| | wget | File download utility |
+| | rsync | File transfer utility |
+| | podman | Container management |
+| | bash | Command shell |
+| | unzip | File extraction utility |
+| | ssh | Secure shell client |
+| **Performance Testing** | fortio | Load testing tool |
+
 ## Building and Publishing the Container
 
 The container now uses separate Containerfiles for each architecture to simplify maintenance and troubleshooting.
@@ -218,22 +254,6 @@ Since Podman runs inside a virtual machine (VM) on macOS, volumes are not direct
 ## Pushing to Quay.io
 
 For additional instructions about publishing to Quay.io, see the "Building and Publishing the Container" section above, which includes a complete workflow.
-
-## Available Tools
-
-This container includes the latest builds of:
-- kubectl and oc (OpenShift CLI)
-- odo (OpenShift Do for developers)
-- argocd and argocd-autopilot
-- AWS CLI (aws)
-- Azure CLI (az)
-- terraform
-- ansible-core with amazon.aws collection
-- Python 3 with boto3 and botocore packages
-- Database clients (mysql and psql for PostgreSQL)
-- git, vim, wget, rsync, tar, gzip, ssh
-- Java 17 OpenJDK and Maven
-- And more!
 
 ## Connecting to Databases
 

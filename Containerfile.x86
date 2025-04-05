@@ -8,9 +8,17 @@ RUN useradd -ms /bin/bash tools
 RUN dnf install -y epel-release && \
     dnf update -y && \
     dnf install -y \
-      vim tar wget java-17-openjdk maven sudo gzip git rsync podman bash unzip openssh-clients \
+      vim tar wget java-17-openjdk maven sudo zip gzip git rsync podman bash unzip openssh-clients \
       mysql postgresql \
       python3 python3-pip python3-devel && \
+    dnf clean all
+
+# Install Node.js
+RUN dnf module list nodejs && \
+    dnf module enable -y nodejs:20 && \
+    dnf install -y nodejs npm && \
+    npm install -g n && \
+    n stable && \
     dnf clean all
 
 # Install latest ArgoCD
@@ -59,6 +67,32 @@ RUN dnf install -y yum-utils && \
 RUN curl -L https://github.com/knative/client/releases/download/knative-v1.12.0/kn-linux-amd64 -o kn && \
     chmod +x kn && \
     mv kn /usr/local/bin/
+
+# Install Knative Functions CLI plugin (func)
+RUN curl -L https://github.com/knative/func/releases/download/knative-v1.17.0/func_linux_amd64 -o func && \
+    chmod +x func && \
+    mv func /usr/local/bin/ && \
+    # Create symbolic link for kn plugin
+    ln -s /usr/local/bin/func /usr/local/bin/kn-func
+
+# Install Helm
+RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
+    chmod 700 get_helm.sh && \
+    ./get_helm.sh && \
+    rm get_helm.sh
+
+# Install Tekton CLI (tkn)
+RUN curl -LO https://github.com/tektoncd/cli/releases/download/v0.40.0/tkn_0.40.0_Linux_x86_64.tar.gz && \
+    mkdir -p /tmp/tkn-extract && \
+    tar xvzf tkn_0.40.0_Linux_x86_64.tar.gz -C /tmp/tkn-extract && \
+    ls -la /tmp/tkn-extract && \
+    mv /tmp/tkn-extract/tkn /usr/local/bin/ && \
+    rm -rf /tmp/tkn-extract tkn_0.40.0_Linux_x86_64.tar.gz
+
+# Install Istio CLI (istioctl)
+RUN curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.21.0 TARGET_ARCH=x86_64 sh - && \
+    mv istio-1.21.0/bin/istioctl /usr/local/bin/ && \
+    rm -rf istio-1.21.0
 
 # Install Fortio
 RUN curl -L https://github.com/fortio/fortio/releases/download/v1.63.0/fortio-linux_x64-1.63.0.tgz -o fortio.tgz && \
