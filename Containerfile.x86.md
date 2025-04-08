@@ -7,7 +7,7 @@ RUN useradd -ms /bin/bash tools
 # Update container libraries and install tools available from the repos
 RUN dnf install -y epel-release && \
     dnf update -y && \
-    dnf install -y \
+    dnf install -y --setopt=install_weak_deps=False --nodocs \
       vim tar wget java-17-openjdk maven sudo zip gzip git rsync podman bash unzip openssh-clients \
       mysql postgresql jq \
       python3 python3-pip python3-devel && \
@@ -16,7 +16,7 @@ RUN dnf install -y epel-release && \
 # Install Node.js
 RUN dnf module list nodejs && \
     dnf module enable -y nodejs:20 && \
-    dnf install -y nodejs npm && \
+    dnf install -y --setopt=install_weak_deps=False --nodocs nodejs npm && \
     npm install -g n && \
     n stable && \
     dnf clean all
@@ -46,7 +46,7 @@ RUN curl -L https://developers.redhat.com/content-gateway/file/pub/openshift-v4/
 # Install Azure CLI
 RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
     dnf install -y https://packages.microsoft.com/config/rhel/9.0/packages-microsoft-prod.rpm && \
-    dnf install -y azure-cli && \
+    dnf install -y --setopt=install_weak_deps=False --nodocs azure-cli && \
     dnf clean all
 
 # Install AWS CLI
@@ -58,9 +58,9 @@ RUN curl -fsSL -o awscliv2.zip "https://awscli.amazonaws.com/awscli-exe-linux-x8
     rm -rf aws awscliv2.zip
 
 # Install Terraform from the official HashiCorp RPM repository
-RUN dnf install -y yum-utils && \
+RUN dnf install -y --setopt=install_weak_deps=False --nodocs yum-utils && \
     yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && \
-    dnf install -y terraform && \
+    dnf install -y --setopt=install_weak_deps=False --nodocs terraform && \
     dnf clean all
 
 # Install Knative CLI (kn)
