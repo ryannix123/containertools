@@ -9,7 +9,7 @@ RUN dnf install -y epel-release && \
     dnf update -y && \
     dnf install -y \
       vim tar wget java-17-openjdk maven sudo zip gzip git rsync podman bash unzip openssh-clients \
-      mysql postgresql \
+      mysql postgresql jq \
       python3 python3-pip python3-devel && \
     dnf clean all
 
@@ -103,6 +103,10 @@ RUN curl -L https://github.com/fortio/fortio/releases/download/v1.68.0/fortio-li
 
 # Create directory for optional local storage mount
 RUN mkdir -p /home/tools/local-storage && chown -R tools:tools /home/tools/local-storage
+
+# Create directory for container registry auth
+RUN mkdir -p /home/tools/.config/containers && \
+    chown -R tools:tools /home/tools/.config
 
 # Switch to non-root user
 USER tools
