@@ -1,6 +1,13 @@
 # Build on top of base CentOS 9 Stream image for ARM architecture
 FROM quay.io/centos/centos:stream9
 
+# Install shadow-utils (for newuidmap/newgidmap)
+RUN dnf install -y shadow-utils && \
+    chmod u+s /usr/bin/newuidmap /usr/bin/newgidmap && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+
+
 # Create a non-root user
 RUN useradd -ms /bin/bash tools
 
