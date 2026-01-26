@@ -24,13 +24,19 @@ RUN dnf install -y shadow-utils && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Install base packages from repos (stable layer - changes infrequently)
+# Install EPEL and update system
 RUN dnf install -y epel-release && \
     dnf update -y && \
-    dnf install -y --setopt=install_weak_deps=False --nodocs \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+
+# Install base packages from repos (stable layer - changes infrequently)
+RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
       vim tar wget java-17-openjdk maven sudo zip gzip git rsync \
-      podman bash unzip openssh-clients mysql postgresql jq curl \
-      python3 python3-pip python3-devel yum-utils && \
+      podman bash unzip openssh-clients jq curl \
+      python3 python3-pip python3-devel dnf-plugins-core && \
+    dnf install -y --setopt=install_weak_deps=False --nodocs \
+      mysql postgresql && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
@@ -48,7 +54,7 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
     rm -rf /var/cache/dnf
 
 # Install Terraform from HashiCorp RPM repository
-RUN yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && \
+RUN dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && \
     dnf install -y --setopt=install_weak_deps=False --nodocs terraform && \
     dnf clean all && \
     rm -rf /var/cache/dnf
