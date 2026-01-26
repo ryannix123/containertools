@@ -24,23 +24,12 @@ RUN dnf install -y shadow-utils && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Refresh DNF cache and install EPEL
-RUN dnf makecache && \
-    dnf install -y epel-release dnf-plugins-core && \
-    dnf makecache && \
-    dnf update -y && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf
-
-# Install core utilities
-RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
+# Install EPEL, update system, and install core utilities in one layer
+RUN dnf install -y epel-release dnf-plugins-core && \
+    dnf upgrade -y --refresh && \
+    dnf install -y --refresh --setopt=install_weak_deps=False --nodocs \
       vim tar wget sudo zip gzip git rsync curl \
-      bash unzip openssh-clients jq && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf
-
-# Install Python
-RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
+      bash unzip openssh-clients jq \
       python3 python3-pip python3-devel && \
     dnf clean all && \
     rm -rf /var/cache/dnf
