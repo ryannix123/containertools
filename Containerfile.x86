@@ -25,10 +25,11 @@ RUN dnf install -y shadow-utils && \
     rm -rf /var/cache/dnf
 
 # Install EPEL, update system, and install core utilities in one layer
+# Note: curl-minimal is already in base image, no need to install curl
 RUN dnf install -y epel-release dnf-plugins-core && \
     dnf upgrade -y --refresh && \
     dnf install -y --refresh --setopt=install_weak_deps=False --nodocs \
-      vim tar wget sudo zip gzip git rsync curl \
+      vim tar wget sudo zip gzip git rsync \
       bash unzip openssh-clients jq \
       python3 python3-pip python3-devel && \
     dnf clean all && \
