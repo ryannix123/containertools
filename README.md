@@ -1,272 +1,89 @@
 # Container Tools
 
+[![Build and Push Multi-Arch Container](https://github.com/ryannix123/containertools/actions/workflows/build-container.yml/badge.svg)](https://github.com/ryannix123/containertools/actions/workflows/build-container.yml)
 [![Docker Repository on Quay](https://quay.io/repository/ryan_nix/containertools/status "Docker Repository on Quay")](https://quay.io/repository/ryan_nix/containertools)
 
-A container is a great way to run essential cloud tools such as `kubectl`, openshift-cli (`oc`), OpenShift Do - for rapid application development against a Kubernetes namespace (`odo`), `ansible-playbook`s, `git`, `wget`, `argocd`, `knative & fortio`, `argocd-autopilot`, `python3`, AWS's cli (`aws`), Azure's CLI (`az`), `wget`, `rsync`, `tar`, `gzip`, `vim`, `ssh`, `terraform`, and database clients (`mysql`, `psql`).
+**Keep your workstation clean. Run your cloud tools in a container.**
 
-The container is built from CentOS Stream 9 and includes EPEL.
+No more cluttering your Mac or Linux machine with CLIs, SDKs, and dependencies that conflict with each other or break after OS updates. Container Tools gives you a ready-to-go environment with everything you need for Kubernetes, cloud, and infrastructure work.
 
-The prebuilt containers are found at my [Quay container repo](https://quay.io/repository/ryan_nix/containertools).
-There are tags for x86 and ARM CPUs.
-
-## Included Tools
-
-| Category | Tool | Description |
-|----------|------|-------------|
-| **Kubernetes & OpenShift** | kubectl | Kubernetes command-line tool |
-| | oc | OpenShift CLI |
-| | odo | OpenShift Do for developers |
-| | helm | Kubernetes package manager |
-| | istioctl | Service mesh management tool |
-| | tkn | Tekton Pipelines CLI |
-| **GitOps & CI/CD** | argocd | Argo CD command-line tool |
-| | argocd-autopilot | GitOps bootstrapping tool |
-| | kn | Knative CLI for serverless workloads |
-| | func | Knative Functions CLI plugin |
-| **Cloud Provider Tools** | aws | AWS command-line interface |
-| | az | Azure command-line interface |
-| **Infrastructure as Code** | terraform | Infrastructure as code tool |
-| | ansible | IT automation platform |
-| **Languages & Runtimes** | python3 | Python interpreter & package manager |
-| | nodejs | JavaScript runtime |
-| | npm | Node.js package manager |
-| | java-17-openjdk | Java Development Kit |
-| | maven | Java build tool |
-| **Database Clients** | mysql | MySQL command-line client |
-| | psql | PostgreSQL command-line client |
-| **Core Utilities** | git | Version control system |
-| | vim | Text editor |
-| | tar/gzip | File compression tools |
-| | wget | File download utility |
-| | rsync | File transfer utility |
-| | podman | Container management |
-| | bash | Command shell |
-| | unzip | File extraction utility |
-| | ssh | Secure shell client |
-| **Performance Testing** | fortio | Load testing tool |
-
-## Building and Publishing the Container
-
-The container now uses separate Containerfiles for each architecture to simplify maintenance and troubleshooting.
-
-### Building Locally
-
-Build the container for your architecture:
+## Quick Start
 
 ```bash
-# Clone the repository if you haven't already
-git clone https://github.com/your-username/containertools.git
+# Pull and run (auto-selects ARM or x86)
+podman run -it --name tools quay.io/ryan_nix/containertools:latest
+
+# Or use the architecture-specific tags
+podman run -it --name tools quay.io/ryan_nix/containertools:arm   # Apple Silicon, ARM servers
+podman run -it --name tools quay.io/ryan_nix/containertools:x86   # Intel/AMD
+```
+
+That's it. You're in a fully-equipped environment.
+
+## What's Inside
+
+| Category | Tools |
+|----------|-------|
+| **Kubernetes & OpenShift** | `kubectl`, `oc`, `odo`, `helm`, `istioctl`, `tkn` |
+| **GitOps & Serverless** | `argocd`, `argocd-autopilot`, `kn`, `func` |
+| **Cloud CLIs** | `aws`, `az` |
+| **Infrastructure as Code** | `terraform`, `ansible` |
+| **Languages** | `python3`, `nodejs`, `java-17-openjdk`, `maven` |
+| **Database Clients** | `mysql`, `psql` |
+| **Essentials** | `git`, `vim`, `podman`, `jq`, `ssh`, `rsync` |
+| **Testing** | `fortio` |
+
+## Persist Your Work
+
+Mount a volume to keep your files, configs, and credentials across sessions:
+
+```bash
+# Create a persistent volume
+podman volume create tools-data
+
+# Run with the volume mounted
+podman run -it --name tools \
+  -v tools-data:/home/tools/local-storage \
+  quay.io/ryan_nix/containertools:latest
+```
+
+Your data lives in `/home/tools/local-storage` inside the container.
+
+## Copy Files In
+
+```bash
+# Copy files into the running container
+podman cp ~/my-kubeconfig tools:/home/tools/local-storage/
+podman cp ~/projects/my-ansible-playbook tools:/home/tools/local-storage/
+```
+
+## Reconnect to Your Container
+
+```bash
+# If you exit, your container keeps running. Reattach with:
+podman attach tools
+
+# Or start it if stopped:
+podman start -ai tools
+```
+
+## Build It Yourself
+
+```bash
+git clone https://github.com/ryannix123/containertools.git
 cd containertools
 
-# Detect architecture
-ARCH=$(uname -m)
-echo "Detected architecture: $ARCH"
-
-# Build the appropriate image based on architecture
-if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm" ]; then
-  echo "Building ARM image"
-  podman build -t containertools:arm -f ./Containerfile.arm
-else
-  echo "Building x86 image"
-  podman build -t containertools:x86 -f ./Containerfile.x86
-fi
+# Build for your architecture
+podman build -t containertools -f ./Containerfile.$(uname -m | sed 's/x86_64/x86/' | sed 's/aarch64/arm/')
 ```
 
-### Publishing to Quay.io
+## Why a Container?
 
-Complete workflow for building and publishing to Quay.io:
+- **Isolation** — Your tools don't interfere with your OS or each other
+- **Reproducibility** — Same environment everywhere, every time
+- **Clean upgrades** — Pull a new image, done. No dependency hell.
+- **Multi-arch** — Works on Apple Silicon Macs, Intel machines, ARM servers
 
-```bash
-# 1. Log in to Quay.io
-podman login quay.io
+---
 
-# 2. Detect architecture and build appropriate image
-ARCH=$(uname -m)
-echo "Detected architecture: $ARCH"
-
-if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm" ]; then
-  echo "Building ARM architecture image"
-  podman build -t containertools:arm -f ./Containerfile.arm
-  # Tag with the Quay.io repository name
-  podman tag containertools:arm quay.io/your_username/containertools:arm
-  # Push the image to Quay.io
-  podman push quay.io/your_username/containertools:arm
-else
-  echo "Building x86 architecture image"
-  podman build -t containertools:x86 -f ./Containerfile.x86
-  # Tag with the Quay.io repository name
-  podman tag containertools:x86 quay.io/your_username/containertools:x86
-  # Push the image to Quay.io
-  podman push quay.io/your_username/containertools:x86
-fi
-```
-
-Replace `your_username` with your actual Quay.io username.
-
-### Building Multi-Architecture Images (Advanced)
-
-For those who need to build multi-architecture images on a single system, you'll need to use a build environment with QEMU support:
-
-```bash
-# 1. Install QEMU support (if not already installed)
-# For RHEL/CentOS/Fedora:
-sudo dnf install qemu-user-static
-
-# 2. Build and push images separately
-# For x86_64 (native or emulated)
-podman build -t containertools:x86 -f ./Containerfile.x86
-podman tag containertools:x86 quay.io/your_username/containertools:x86
-podman push quay.io/your_username/containertools:x86
-
-# For ARM64 (native or emulated)
-podman build -t containertools:arm -f ./Containerfile.arm
-podman tag containertools:arm quay.io/your_username/containertools:arm
-podman push quay.io/your_username/containertools:arm
-
-# 3. Create a manifest list
-podman manifest create quay.io/your_username/containertools:latest
-
-# 4. Add the images to the manifest
-podman manifest add quay.io/your_username/containertools:latest quay.io/your_username/containertools:x86
-podman manifest add quay.io/your_username/containertools:latest quay.io/your_username/containertools:arm
-
-# 5. Push the manifest
-podman manifest push quay.io/your_username/containertools:latest
-```
-
-For macOS users with Podman Desktop or Podman Machine:
-```bash
-# The QEMU emulator should be included with Podman Machine by default
-# Verify it's working with:
-podman machine ssh
-ls -la /usr/bin/qemu-*
-```
-
-## Using a Pre-built Container
-
-### Pull the appropriate image for your system's architecture
-```bash
-podman pull quay.io/ryan_nix/containertools:x86
-```
-or
-```bash
-podman pull quay.io/ryan_nix/containertools:arm
-```
-
-### List images
-```bash
-podman images
-```
-
-### Run the container
-Basic run:
-```bash
-podman run -d -it --name tools quay.io/ryan_nix/containertools:x86
-```
-or
-```bash
-podman run -d -it --name tools quay.io/ryan_nix/containertools:arm
-```
-
-### Attach to the container
-```bash
-podman attach tools
-```
-## Persistent Storage with Podman
-
-If you want to persist data across container restarts, you can create a Podman volume and mount it inside the container.
-
-### Create a Persistent Volume
-Run the following command to create a named volume:
-```sh
-podman volume create tools-data
-```
-
-### Run the Container with the Persistent Volume
-When starting the container, mount the volume to the desired path:
-
-```sh
-# Run interactively (you'll immediately enter the container)
-podman run -it --name tools -v tools-data:/home/tools/local-storage quay.io/ryan_nix/containertools:arm
-
-# OR run in the background (detached mode)
-podman run -d -it --name tools -v tools-data:/home/tools/local-storage quay.io/ryan_nix/containertools:arm
-```
-
-If you run the container in detached mode, you can later connect to it using:
-```sh
-podman attach name-of-your-running-container
-```
-
-### Verify Data Persistence
-To test if the data persists after container restarts:
-1. Start a container with the volume and create a file:
-    ```sh
-    # Interactive mode for testing
-    podman run -it -v tools-data:/home/tools/local-storage my-container-image bash
-    echo "Persistent storage test" > /home/tools/local-storage/testfile.txt
-    exit
-    ```
-2. Start another container with the same volume and check the file:
-    ```sh
-    podman run -it -v tools-data:/home/tools/local-storage my-container-image bash
-    cat /home/tools/local-storage/testfile.txt
-    ```
-   You should see `Persistent storage test`, confirming that the data is persistent.
-
-### Copying Data to the Container
-To copy files from your host machine to the container:
-
-```sh
-# Copy a single file to the container's volume
-podman cp ~/path/to/yourfile tools:/home/tools/local-storage/
-
-# Copy the directory including its name (recursive copy)
-podman cp ~/path/to/your/directory tools:/home/tools/local-storage/
-```
-
-This works for both Linux and macOS users, and is the simplest way to transfer files to your container.
-
-### Access the Volume Data from the Host
-
-#### **Linux Users**
-Podman stores volumes in `/var/lib/containers/storage/volumes/`. To access the stored data from the host:
-```sh
-ls /var/lib/containers/storage/volumes/tools-data/_data
-```
-
-#### **macOS Users**
-Since Podman runs inside a virtual machine (VM) on macOS, volumes are not directly accessible from the host filesystem. To access the volume data:
-
-1. Find the volume mount location inside the Podman VM:
-    ```sh
-    podman volume inspect tools-data
-    ```
-2. SSH into the Podman VM:
-    ```sh
-    podman machine ssh
-    ```
-3. Navigate to the volume's storage path inside the VM, which will be under `/var/lib/containers/storage/volumes/`:
-    ```sh
-    ls /var/lib/containers/storage/volumes/tools-data/_data
-    ```
-    
-## Pushing to Quay.io
-
-For additional instructions about publishing to Quay.io, see the "Building and Publishing the Container" section above, which includes a complete workflow.
-
-## Connecting to Databases
-
-The container includes client tools for connecting to MySQL and PostgreSQL databases:
-
-### MySQL
-```bash
-mysql -h hostname -u username -p database_name
-```
-
-### PostgreSQL
-```bash
-psql -h hostname -U username -d database_name
-```
-
-You can also use these clients with connection strings stored in your mounted local storage for better security.
+Built on CentOS Stream 9. [View on Quay.io →](https://quay.io/repository/ryan_nix/containertools)
