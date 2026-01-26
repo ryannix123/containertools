@@ -34,39 +34,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Install Buildah and Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y buildah podman
 
       - name: Log in to Quay.io
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
+        run: |
+          buildah login -u ${{ secrets.QUAY_USERNAME }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=x86
-            type=sha,prefix=x86-
+      - name: Build x86 image
+        run: |
+          buildah bud \
+            --format docker \
+            --arch amd64 \
+            --build-arg NODE_VERSION=${{ env.NODE_VERSION }} \
+            --build-arg ANSIBLE_VERSION=${{ env.ANSIBLE_VERSION }} \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x86 \
+            -f ./Containerfile.x86 \
+            .
 
-      - name: Build and push x86 image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Containerfile.x86
-          platforms: linux/amd64
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            NODE_VERSION=${{ env.NODE_VERSION }}
-            ANSIBLE_VERSION=${{ env.ANSIBLE_VERSION }}
-          no-cache: true
+      - name: Push x86 image
+        if: github.event_name != 'pull_request'
+        run: |
+          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x86
 
   build-arm:
     runs-on: ubuntu-latest
@@ -74,71 +66,70 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
+      - name: Set up QEMU for ARM emulation
         uses: docker/setup-qemu-action@v3
         with:
           platforms: linux/arm64
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Install Buildah and Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y buildah podman qemu-user-static
 
       - name: Log in to Quay.io
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
+        run: |
+          buildah login -u ${{ secrets.QUAY_USERNAME }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=arm
-            type=sha,prefix=arm-
+      - name: Build ARM image
+        run: |
+          buildah bud \
+            --format docker \
+            --arch arm64 \
+            --build-arg NODE_VERSION=${{ env.NODE_VERSION }} \
+            --build-arg ANSIBLE_VERSION=${{ env.ANSIBLE_VERSION }} \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm \
+            -f ./Containerfile.arm \
+            .
 
-      - name: Build and push ARM image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Containerfile.arm
-          platforms: linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            NODE_VERSION=${{ env.NODE_VERSION }}
-            ANSIBLE_VERSION=${{ env.ANSIBLE_VERSION }}
-          no-cache: true
+      - name: Push ARM image
+        if: github.event_name != 'pull_request'
+        run: |
+          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm
 
   create-manifest:
     needs: [build-x86, build-arm]
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
-      - name: Log in to Quay.io
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Install Buildah
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y buildah
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Log in to Quay.io
+        run: |
+          buildah login -u ${{ secrets.QUAY_USERNAME }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
       - name: Create and push multi-arch manifest
         run: |
           # Create manifest for :latest tag
-          docker buildx imagetools create -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x86 \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm
-          
-          # Create manifest with date tag for versioning
+          buildah manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x86
+          buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm
+          buildah manifest push --all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+          # Create manifest with date tag
           DATE_TAG=$(date +%Y%m%d)
-          docker buildx imagetools create -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DATE_TAG} \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x86 \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm
-          
+          buildah manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DATE_TAG}
+          buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DATE_TAG} \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x86
+          buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DATE_TAG} \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm
+          buildah manifest push --all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DATE_TAG} \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DATE_TAG}
+
           echo "✅ Published multi-arch manifest with tags: latest, ${DATE_TAG}"
