@@ -24,8 +24,10 @@ RUN dnf install -y shadow-utils && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Install EPEL and update system
-RUN dnf install -y epel-release && \
+# Refresh DNF cache and install EPEL
+RUN dnf makecache && \
+    dnf install -y epel-release dnf-plugins-core && \
+    dnf makecache && \
     dnf update -y && \
     dnf clean all && \
     rm -rf /var/cache/dnf
@@ -33,7 +35,7 @@ RUN dnf install -y epel-release && \
 # Install core utilities
 RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
       vim tar wget sudo zip gzip git rsync curl \
-      bash unzip openssh-clients jq dnf-plugins-core && \
+      bash unzip openssh-clients jq && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
