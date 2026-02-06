@@ -15,20 +15,15 @@ on:
       node_version:
         description: 'Node.js major version'
         required: false
-        default: '20'
-      ansible_version:
-        description: 'Ansible version'
-        required: false
-        default: '8.7.0'
+        default: '22'
 
 env:
   REGISTRY: quay.io
   IMAGE_NAME: ryan_nix/containertools
-  NODE_VERSION: ${{ github.event.inputs.node_version || '20' }}
-  ANSIBLE_VERSION: ${{ github.event.inputs.ansible_version || '8.7.0' }}
+  NODE_VERSION: ${{ github.event.inputs.node_version || '22' }}
 
 jobs:
-  build-x86:
+  build-x64:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -44,21 +39,20 @@ jobs:
         run: |
           buildah login -u ${{ secrets.QUAY_USERNAME }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
-      - name: Build x86 image
+      - name: Build x64 image
         run: |
           buildah bud \
             --format docker \
             --arch amd64 \
             --build-arg NODE_VERSION=${{ env.NODE_VERSION }} \
-            --build-arg ANSIBLE_VERSION=${{ env.ANSIBLE_VERSION }} \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x86 \
-            -f ./Containerfile.x86 \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x64 \
+            -f ./Containerfile.x64 \
             .
 
-      - name: Push x86 image
+      - name: Push x64 image
         if: github.event_name != 'pull_request'
         run: |
-          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x86
+          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x64
 
   build-arm:
     runs-on: ubuntu-latest
@@ -87,7 +81,6 @@ jobs:
             --format docker \
             --arch arm64 \
             --build-arg NODE_VERSION=${{ env.NODE_VERSION }} \
-            --build-arg ANSIBLE_VERSION=${{ env.ANSIBLE_VERSION }} \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm \
             -f ./Containerfile.arm \
             .
@@ -98,7 +91,7 @@ jobs:
           buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm
 
   create-manifest:
-    needs: [build-x86, build-arm]
+    needs: [build-x64, build-arm]
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
@@ -116,7 +109,7 @@ jobs:
           # Create manifest for :latest tag
           buildah manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x86
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x64
           buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
             docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm
           buildah manifest push --all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
@@ -126,7 +119,7 @@ jobs:
           DATE_TAG=$(date +%Y%m%d)
           buildah manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DATE_TAG}
           buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DATE_TAG} \
-            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x86
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:x64
           buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DATE_TAG} \
             docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm
           buildah manifest push --all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DATE_TAG} \
