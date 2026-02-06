@@ -1,14 +1,9 @@
 # Build on top of base CentOS 9 Stream image for x86_64 architecture
 FROM quay.io/centos/centos:stream9
 
-# Build arguments for tool versions (makes updates easier)
-ARG NODE_VERSION=20
-ARG ANSIBLE_VERSION=8.7.0
-ARG KNATIVE_VERSION=1.17.0
-ARG TEKTON_VERSION=0.40.0
-ARG ISTIO_VERSION=1.21.0
-ARG FORTIO_VERSION=1.68.0
-ARG ODO_VERSION=3.16.1
+# Build arguments for tool versions (balanced approach: major versions for stability)
+ARG NODE_VERSION=22
+# Python packages will use latest compatible versions
 
 # OCI Image Labels
 LABEL org.opencontainers.image.title="Container Tools" \
@@ -77,42 +72,48 @@ RUN curl -fsSL -o awscliv2.zip "https://awscli.amazonaws.com/awscli-exe-linux-x8
     ./aws/install && \
     rm -rf aws awscliv2.zip
 
-# Install OpenShift CLI (oc), kubectl, and odo
+# Install OpenShift CLI (oc), kubectl - already using latest
 RUN curl -fsSL https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz | \
     tar xzf - -C /usr/local/bin oc kubectl && \
-    chmod 755 /usr/local/bin/oc /usr/local/bin/kubectl && \
+    chmod 755 /usr/local/bin/oc /usr/local/bin/kubectl
+
+# Install odo - dynamically fetch latest version
+RUN ODO_VERSION=$(curl -s https://api.github.com/repos/redhat-developer/odo/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/') && \
     curl -fsSL -o /usr/local/bin/odo "https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/odo/v${ODO_VERSION}/odo-linux-amd64" && \
     chmod 755 /usr/local/bin/odo
 
-# Install ArgoCD and ArgoCD Autopilot
+# Install ArgoCD and ArgoCD Autopilot - already using latest
 RUN curl -fsSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 && \
     chmod 555 /usr/local/bin/argocd && \
     VERSION=$(curl -s https://api.github.com/repos/argoproj-labs/argocd-autopilot/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/') && \
     curl -fsSL "https://github.com/argoproj-labs/argocd-autopilot/releases/download/${VERSION}/argocd-autopilot-linux-amd64.tar.gz" | tar xzf - && \
     chmod 555 argocd-autopilot-* && mv argocd-autopilot-* /usr/local/bin/argocd-autopilot
 
-# Install Helm
+# Install Helm - already using latest
 RUN curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-# Install Knative CLI (kn) and Functions plugin (func)
-RUN curl -fsSL -o /usr/local/bin/kn "https://github.com/knative/client/releases/download/knative-v${KNATIVE_VERSION}/kn-linux-amd64" && \
+# Install Knative CLI (kn) and Functions plugin (func) - dynamically fetch latest
+RUN KNATIVE_VERSION=$(curl -s https://api.github.com/repos/knative/client/releases/latest | grep '"tag_name"' | sed -E 's/.*"knative-v([^"]+)".*/\1/') && \
+    curl -fsSL -o /usr/local/bin/kn "https://github.com/knative/client/releases/download/knative-v${KNATIVE_VERSION}/kn-linux-amd64" && \
     chmod 755 /usr/local/bin/kn && \
     curl -fsSL -o /usr/local/bin/func "https://github.com/knative/func/releases/download/knative-v${KNATIVE_VERSION}/func_linux_amd64" && \
     chmod 755 /usr/local/bin/func && \
     ln -s /usr/local/bin/func /usr/local/bin/kn-func
 
-# Install Tekton CLI (tkn)
-RUN curl -fsSL "https://github.com/tektoncd/cli/releases/download/v${TEKTON_VERSION}/tkn_${TEKTON_VERSION}_Linux_x86_64.tar.gz" | \
+# Install Tekton CLI (tkn) - dynamically fetch latest
+RUN TEKTON_VERSION=$(curl -s https://api.github.com/repos/tektoncd/cli/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/') && \
+    curl -fsSL "https://github.com/tektoncd/cli/releases/download/v${TEKTON_VERSION}/tkn_${TEKTON_VERSION}_Linux_x86_64.tar.gz" | \
     tar xzf - -C /usr/local/bin tkn && \
     chmod 755 /usr/local/bin/tkn
 
-# Install Istio CLI (istioctl)
-RUN curl -fsSL https://istio.io/downloadIstio | ISTIO_VERSION=${ISTIO_VERSION} TARGET_ARCH=x86_64 sh - && \
-    mv istio-${ISTIO_VERSION}/bin/istioctl /usr/local/bin/ && \
-    rm -rf istio-${ISTIO_VERSION}
+# Install Istio CLI (istioctl) - using latest (omit ISTIO_VERSION to get latest)
+RUN curl -fsSL https://istio.io/downloadIstio | TARGET_ARCH=x86_64 sh - && \
+    mv istio-*/bin/istioctl /usr/local/bin/ && \
+    rm -rf istio-*
 
-# Install Fortio
-RUN curl -fsSL "https://github.com/fortio/fortio/releases/download/v${FORTIO_VERSION}/fortio-linux_amd64-${FORTIO_VERSION}.tgz" | \
+# Install Fortio - dynamically fetch latest
+RUN FORTIO_VERSION=$(curl -s https://api.github.com/repos/fortio/fortio/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/') && \
+    curl -fsSL "https://github.com/fortio/fortio/releases/download/v${FORTIO_VERSION}/fortio-linux_amd64-${FORTIO_VERSION}.tgz" | \
     tar xzf - --strip-components=2 usr/bin/fortio && \
     chmod 755 fortio && mv fortio /usr/local/bin/
 
@@ -128,8 +129,9 @@ WORKDIR /home/tools
 ENV PATH="/home/tools/.local/bin:${PATH}"
 
 # Install Python packages and Ansible as the tools user
+# Using latest versions for better future-proofing with major version constraints where needed
 RUN pip3 install --user --upgrade pip && \
-    pip3 install --user ansible==${ANSIBLE_VERSION} boto3 botocore \
+    pip3 install --user 'ansible>=9' boto3 botocore \
       packaging msrest msrestazure "requests[security]" xmltodict \
       azure-mgmt-compute azure-mgmt-storage azure-mgmt-resource azure-mgmt-network \
       azure-mgmt-containerservice azure-identity azure-common azure-mgmt-core \
