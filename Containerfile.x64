@@ -36,16 +36,27 @@ RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Install latest Podman from Kubic repository
-RUN curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/CentOS_9_Stream/devel:kubic:libcontainers:unstable.repo \
-      -o /etc/yum.repos.d/devel:kubic:libcontainers:unstable.repo && \
+# Install latest Podman from Kubic stable repository (more reliable than unstable)
+# Falls back to EPEL if Kubic repo is unavailable
+RUN (curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/CentOS_9_Stream/devel:kubic:libcontainers:stable.repo \
+      -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo 2>/dev/null || true) && \
     dnf install -y --setopt=install_weak_deps=False --nodocs podman && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
+# Configure subuid/subgid for rootless podman-in-podman
+RUN echo "tools:100000:65536" > /etc/subuid && \
+    echo "tools:100000:65536" > /etc/subgid
+
 # Install database clients
 RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
       mariadb postgresql && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+
+# Install fuse-overlayfs for better podman-in-podman support
+RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
+      fuse-overlayfs && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
@@ -119,9 +130,28 @@ RUN FORTIO_VERSION=$(curl -s https://api.github.com/repos/fortio/fortio/releases
     tar xzf - --strip-components=2 usr/bin/fortio && \
     chmod 755 fortio && mv fortio /usr/local/bin/
 
-# Setup user directories
-RUN mkdir -p /home/tools/local-storage /home/tools/.config/containers && \
+# Setup user directories and configure Podman for podman-in-podman
+RUN mkdir -p /home/tools/local-storage /home/tools/.config/containers /home/tools/.local/share/containers/storage && \
     chown -R tools:tools /home/tools
+
+# Configure Podman storage to use vfs driver (more compatible for nested containers)
+RUN echo '[storage]' > /home/tools/.config/containers/storage.conf && \
+    echo 'driver = "vfs"' >> /home/tools/.config/containers/storage.conf && \
+    echo '[storage.options]' >> /home/tools/.config/containers/storage.conf && \
+    echo 'mount_program = "/usr/bin/fuse-overlayfs"' >> /home/tools/.config/containers/storage.conf && \
+    chown tools:tools /home/tools/.config/containers/storage.conf
+
+# Configure Podman containers.conf for better nested container support
+RUN echo '[containers]' > /home/tools/.config/containers/containers.conf && \
+    echo 'netns="host"' >> /home/tools/.config/containers/containers.conf && \
+    echo 'userns="host"' >> /home/tools/.config/containers/containers.conf && \
+    echo 'ipcns="host"' >> /home/tools/.config/containers/containers.conf && \
+    echo 'utsns="host"' >> /home/tools/.config/containers/containers.conf && \
+    echo 'cgroupns="host"' >> /home/tools/.config/containers/containers.conf && \
+    echo '[engine]' >> /home/tools/.config/containers/containers.conf && \
+    echo 'cgroup_manager="cgroupfs"' >> /home/tools/.config/containers/containers.conf && \
+    echo 'events_logger="file"' >> /home/tools/.config/containers/containers.conf && \
+    chown tools:tools /home/tools/.config/containers/containers.conf
 
 # Switch to non-root user
 USER tools
