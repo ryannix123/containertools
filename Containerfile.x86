@@ -30,14 +30,16 @@ RUN dnf install -y epel-release dnf-plugins-core && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Install Java and Maven
+# Install Java 21 (latest LTS) and Maven
 RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
-      java-17-openjdk maven && \
+      java-21-openjdk java-21-openjdk-devel maven && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Install Podman
-RUN dnf install -y --setopt=install_weak_deps=False --nodocs podman && \
+# Install latest Podman from Kubic repository
+RUN curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/CentOS_9_Stream/devel:kubic:libcontainers:unstable.repo \
+      -o /etc/yum.repos.d/devel:kubic:libcontainers:unstable.repo && \
+    dnf install -y --setopt=install_weak_deps=False --nodocs podman && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
