@@ -102,8 +102,9 @@ RUN curl -fsSL https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/
     tar xzf - --no-same-owner -C /usr/local/bin oc kubectl && \
     chmod 755 /usr/local/bin/oc /usr/local/bin/kubectl
 
-# Install ROSA CLI (Red Hat OpenShift Service on AWS)
-RUN curl -fsSL https://mirror.openshift.com/pub/openshift-v4/clients/rosa/latest/rosa-linux.tar.gz | \
+# Install ROSA CLI (Red Hat OpenShift Service on AWS) - dynamically fetch latest from GitHub
+RUN ROSA_VERSION=$(curl -s https://api.github.com/repos/openshift/rosa/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/') && \
+    curl -fsSL "https://github.com/openshift/rosa/releases/download/v${ROSA_VERSION}/rosa_Linux_x86_64.tar.gz" | \
     tar xzf - --no-same-owner -C /usr/local/bin rosa && \
     chmod 755 /usr/local/bin/rosa
 
