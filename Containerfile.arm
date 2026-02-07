@@ -99,12 +99,12 @@ RUN curl -fsSL -o awscliv2.zip "https://awscli.amazonaws.com/awscli-exe-linux-aa
 
 # Install OpenShift CLI (oc), kubectl - already using latest
 RUN curl -fsSL https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-arm64.tar.gz | \
-    tar xzf - -C /usr/local/bin oc kubectl && \
+    tar xzf - --no-same-owner -C /usr/local/bin oc kubectl && \
     chmod 755 /usr/local/bin/oc /usr/local/bin/kubectl
 
 # Install ROSA CLI (Red Hat OpenShift Service on AWS)
 RUN curl -fsSL https://mirror.openshift.com/pub/openshift-v4/clients/rosa/latest/rosa-linux-arm64.tar.gz | \
-    tar xzf - -C /usr/local/bin rosa && \
+    tar xzf - --no-same-owner -C /usr/local/bin rosa && \
     chmod 755 /usr/local/bin/rosa
 
 # Install odo - dynamically fetch latest version
@@ -116,7 +116,7 @@ RUN ODO_VERSION=$(curl -s https://api.github.com/repos/redhat-developer/odo/rele
 RUN curl -fsSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-arm64 && \
     chmod 555 /usr/local/bin/argocd && \
     VERSION=$(curl -s https://api.github.com/repos/argoproj-labs/argocd-autopilot/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/') && \
-    curl -fsSL "https://github.com/argoproj-labs/argocd-autopilot/releases/download/${VERSION}/argocd-autopilot-linux-arm64.tar.gz" | tar xzf - && \
+    curl -fsSL "https://github.com/argoproj-labs/argocd-autopilot/releases/download/${VERSION}/argocd-autopilot-linux-arm64.tar.gz" | tar xzf - --no-same-owner && \
     chmod 555 argocd-autopilot-* && mv argocd-autopilot-* /usr/local/bin/argocd-autopilot
 
 # Install Helm - already using latest
@@ -133,7 +133,7 @@ RUN KNATIVE_VERSION=$(curl -s https://api.github.com/repos/knative/client/releas
 # Install Tekton CLI (tkn) - dynamically fetch latest
 RUN TEKTON_VERSION=$(curl -s https://api.github.com/repos/tektoncd/cli/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/') && \
     curl -fsSL "https://github.com/tektoncd/cli/releases/download/v${TEKTON_VERSION}/tkn_${TEKTON_VERSION}_Linux_aarch64.tar.gz" | \
-    tar xzf - -C /usr/local/bin tkn && \
+    tar xzf - --no-same-owner -C /usr/local/bin tkn && \
     chmod 755 /usr/local/bin/tkn
 
 # Install Istio CLI (istioctl) - using latest (omit ISTIO_VERSION to get latest)
@@ -144,7 +144,7 @@ RUN curl -fsSL https://istio.io/downloadIstio | TARGET_ARCH=arm64 sh - && \
 # Install Fortio - dynamically fetch latest
 RUN FORTIO_VERSION=$(curl -s https://api.github.com/repos/fortio/fortio/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/') && \
     curl -fsSL "https://github.com/fortio/fortio/releases/download/v${FORTIO_VERSION}/fortio-linux_arm64-${FORTIO_VERSION}.tgz" | \
-    tar xzf - --strip-components=2 usr/bin/fortio && \
+    tar xzf - --no-same-owner --strip-components=2 usr/bin/fortio && \
     chmod 755 fortio && mv fortio /usr/local/bin/
 
 # Setup user directories and configure Podman for podman-in-podman
