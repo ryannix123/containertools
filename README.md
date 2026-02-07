@@ -26,13 +26,13 @@ That's it. You're in a fully-equipped environment.
 |----------|-------|
 | **Kubernetes & OpenShift** | `kubectl`, `oc`, `rosa`, `odo`, `helm`, `istioctl`, `tkn` (Tekton) |
 | **GitOps & Serverless** | `argocd`, `argocd-autopilot`, `kn` (Knative), `func` |
-| **Cloud CLIs** | `aws`, `az` (Azure) |
+| **Cloud CLIs** | `aws`, `az` (Azure), `gcloud` (Google Cloud) |
 | **Infrastructure as Code** | `terraform`, `ansible` (9+) |
 | **Container Tools** | `podman` (5.x), `buildah` (via podman) |
 | **Languages** | `python3`, `node.js` (22), `java-21-openjdk`, `maven` |
 | **Database Clients** | `mysql`, `psql` |
 | **Essentials** | `git`, `vim`, `jq`, `ssh`, `rsync` |
-| **Testing** | `fortio` |
+| **Network Load Testing** | `fortio` |
 
 All tools automatically fetch the latest versions at build time.
 
