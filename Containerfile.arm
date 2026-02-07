@@ -90,6 +90,11 @@ RUN curl -fsSL https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/
     tar xzf - -C /usr/local/bin oc kubectl && \
     chmod 755 /usr/local/bin/oc /usr/local/bin/kubectl
 
+# Install ROSA CLI (Red Hat OpenShift Service on AWS)
+RUN curl -fsSL https://mirror.openshift.com/pub/openshift-v4/clients/rosa/latest/rosa-linux-arm64.tar.gz | \
+    tar xzf - -C /usr/local/bin rosa && \
+    chmod 755 /usr/local/bin/rosa
+
 # Install odo - dynamically fetch latest version
 RUN ODO_VERSION=$(curl -s https://api.github.com/repos/redhat-developer/odo/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/') && \
     curl -fsSL -o /usr/local/bin/odo "https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/odo/v${ODO_VERSION}/odo-linux-arm64" && \

@@ -24,7 +24,7 @@ That's it. You're in a fully-equipped environment.
 
 | Category | Tools |
 |----------|-------|
-| **Kubernetes & OpenShift** | `kubectl`, `oc`, `odo`, `helm`, `istioctl`, `tkn` (Tekton) |
+| **Kubernetes & OpenShift** | `kubectl`, `oc`, `rosa`, `odo`, `helm`, `istioctl`, `tkn` (Tekton) |
 | **GitOps & Serverless** | `argocd`, `argocd-autopilot`, `kn` (Knative), `func` |
 | **Cloud CLIs** | `aws`, `az` (Azure) |
 | **Infrastructure as Code** | `terraform`, `ansible` (9+) |
