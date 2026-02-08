@@ -152,31 +152,25 @@ RUN FORTIO_VERSION=$(curl -s https://api.github.com/repos/fortio/fortio/releases
 RUN mkdir -p /home/tools/local-storage /home/tools/.config/containers /home/tools/.local/share/containers/storage && \
     chown -R tools:tools /home/tools
 
-# Configure Podman storage to use vfs driver (more compatible for nested containers)
-RUN echo '[storage]' > /home/tools/.config/containers/storage.conf && \
-    echo 'driver = "vfs"' >> /home/tools/.config/containers/storage.conf && \
-    echo '[storage.options]' >> /home/tools/.config/containers/storage.conf && \
-    echo 'mount_program = "/usr/bin/fuse-overlayfs"' >> /home/tools/.config/containers/storage.conf && \
+# Configure Podman storage to use vfs driver (works without --privileged)
+RUN printf '[storage]\ndriver = "vfs"\n' \
+    > /home/tools/.config/containers/storage.conf && \
     chown tools:tools /home/tools/.config/containers/storage.conf
 
-# Configure Podman containers.conf for better nested container support
-RUN echo '[containers]' > /home/tools/.config/containers/containers.conf && \
-    echo 'netns="host"' >> /home/tools/.config/containers/containers.conf && \
-    echo 'userns="host"' >> /home/tools/.config/containers/containers.conf && \
-    echo 'ipcns="host"' >> /home/tools/.config/containers/containers.conf && \
-    echo 'utsns="host"' >> /home/tools/.config/containers/containers.conf && \
-    echo 'cgroupns="host"' >> /home/tools/.config/containers/containers.conf && \
-    echo '[engine]' >> /home/tools/.config/containers/containers.conf && \
-    echo 'cgroup_manager="cgroupfs"' >> /home/tools/.config/containers/containers.conf && \
-    echo 'events_logger="file"' >> /home/tools/.config/containers/containers.conf && \
+# Configure Podman for nested container support
+RUN printf '[containers]\nnetns="host"\nipcns="host"\nutsns="host"\ncgroupns="host"\n\n[engine]\ncgroup_manager="cgroupfs"\nevents_logger="file"\n' \
+    > /home/tools/.config/containers/containers.conf && \
     chown tools:tools /home/tools/.config/containers/containers.conf
 
 # Switch to non-root user
 USER tools
 WORKDIR /home/tools
 
-# Set PATH to include user's local bin directory
-ENV PATH="/home/tools/.local/bin:${PATH}"
+# Set PATH and configure rootless Podman to skip user namespace remapping
+# _CONTAINERS_USERNS_CONFIGURED tells Podman not to call newuidmap/newgidmap
+ENV PATH="/home/tools/.local/bin:${PATH}" \
+    _CONTAINERS_USERNS_CONFIGURED="" \
+    BUILDAH_ISOLATION=chroot
 
 # Install Python packages and Ansible as the tools user
 # Using latest versions for better future-proofing with major version constraints where needed
