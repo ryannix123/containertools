@@ -59,19 +59,79 @@ See [PODMAN_IN_PODMAN.md](PODMAN_IN_PODMAN.md) for detailed usage including Open
 
 ## Persist Your Work
 
-Mount a volume to keep your files, configs, and credentials across sessions:
+The container stores configuration and credentials in the `/home/tools` directory. To persist your work, credentials, and tool configurations across sessions, mount volumes for the directories you need.
+
+### Quick Start: Persist Everything
+
+Mount the entire home directory to keep all configurations:
 
 ```bash
 # Create a persistent volume
-podman volume create tools-data
+podman volume create tools-home
 
-# Run with the volume mounted
+# Run with full persistence
 podman run -it --name tools \
-  -v tools-data:/home/tools/local-storage \
+  -v tools-home:/home/tools \
   quay.io/ryan_nix/containertools:latest
 ```
 
-Your data lives in `/home/tools/local-storage` inside the container.
+This preserves:
+- All cloud CLI credentials (AWS, Azure, GCP)
+- Kubernetes/OpenShift configs
+- SSH keys
+- Ansible collections and roles
+- Terraform state and plugins
+- Your files in `/home/tools/local-storage`
+
+### Selective Persistence
+
+Mount only specific directories if you prefer:
+
+```bash
+podman run -it --name tools \
+  -v tools-data:/home/tools/local-storage \
+  -v aws-config:/home/tools/.aws \
+  -v kube-config:/home/tools/.kube \
+  -v azure-config:/home/tools/.azure \
+  -v gcloud-config:/home/tools/.config/gcloud \
+  quay.io/ryan_nix/containertools:latest
+```
+
+### What Gets Persisted
+
+| Tool | Config Location | What's Stored |
+|------|----------------|---------------|
+| **AWS CLI** | `~/.aws/` | Credentials, profiles, config |
+| **Azure CLI** | `~/.azure/` | Tokens, subscriptions, profiles |
+| **Google Cloud** | `~/.config/gcloud/` | Credentials, active project, config |
+| **kubectl/oc** | `~/.kube/` | Kubeconfig, contexts, certificates |
+| **ROSA** | `~/.rosa/` | OCM tokens, configurations |
+| **Ansible** | `~/.ansible/` | Collections, roles, vault passwords |
+| **Terraform** | `~/.terraform.d/` | Plugins, credentials |
+| **SSH** | `~/.ssh/` | Keys, known_hosts, config |
+| **Your Files** | `~/local-storage/` | Your working directory |
+
+### First-Time Setup
+
+On first run, configure your cloud tools:
+
+```bash
+# AWS
+aws configure
+
+# Azure  
+az login
+
+# Google Cloud
+gcloud auth login
+gcloud config set project my-project
+
+# OpenShift/ROSA
+rosa login
+oc login --server=https://api.cluster.com:6443 --token=...
+```
+
+These configurations persist in the mounted volumes, so you only need to do this once.
 
 ## Copy Files In
 
