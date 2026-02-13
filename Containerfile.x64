@@ -1,5 +1,5 @@
-# Build on top of base CentOS 9 Stream image for x86_64 architecture
-FROM quay.io/centos/centos:stream9
+# Build on top of base CentOS 10 Stream image for x86_64 architecture
+FROM quay.io/centos/centos:stream10
 
 # Build arguments for tool versions (balanced approach: major versions for stability)
 ARG NODE_VERSION=22
@@ -25,7 +25,7 @@ RUN dnf install -y epel-release dnf-plugins-core && \
     dnf upgrade -y --refresh && \
     dnf install -y --refresh --setopt=install_weak_deps=False --nodocs \
       vim tar wget sudo zip gzip git rsync \
-      bash unzip openssh-clients jq \
+      bash unzip openssh-clients jq openssl \
       python3 python3-pip python3-devel && \
     dnf clean all && \
     rm -rf /var/cache/dnf
@@ -38,7 +38,7 @@ RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
 
 # Install latest Podman from Kubic stable repository (more reliable than unstable)
 # Falls back to EPEL if Kubic repo is unavailable
-RUN (curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/CentOS_9_Stream/devel:kubic:libcontainers:stable.repo \
+RUN (curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/CentOS_10_Stream/devel:kubic:libcontainers:stable.repo \
       -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo 2>/dev/null || true) && \
     dnf install -y --setopt=install_weak_deps=False --nodocs podman && \
     dnf clean all && \
@@ -66,24 +66,17 @@ RUN curl -fsSL https://rpm.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Install Azure CLI
+# Install Azure CLI and Google Cloud CLI
 RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
-    dnf install -y https://packages.microsoft.com/config/rhel/9.0/packages-microsoft-prod.rpm && \
+    echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo && \
     dnf install -y --setopt=install_weak_deps=False --nodocs azure-cli && \
     dnf clean all && \
-    rm -rf /var/cache/dnf
-
-# Install Google Cloud CLI
-RUN echo "[google-cloud-cli]" > /etc/yum.repos.d/google-cloud-sdk.repo && \
-    echo "name=Google Cloud CLI" >> /etc/yum.repos.d/google-cloud-sdk.repo && \
-    echo "baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64" >> /etc/yum.repos.d/google-cloud-sdk.repo && \
-    echo "enabled=1" >> /etc/yum.repos.d/google-cloud-sdk.repo && \
-    echo "gpgcheck=1" >> /etc/yum.repos.d/google-cloud-sdk.repo && \
-    echo "repo_gpgcheck=0" >> /etc/yum.repos.d/google-cloud-sdk.repo && \
-    echo "gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg" >> /etc/yum.repos.d/google-cloud-sdk.repo && \
-    dnf install -y --setopt=install_weak_deps=False --nodocs google-cloud-cli && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf
+    rm -rf /var/cache/dnf && \
+    curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=/usr/local && \
+    ln -s /usr/local/google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud && \
+    ln -s /usr/local/google-cloud-sdk/bin/gsutil /usr/local/bin/gsutil && \
+    ln -s /usr/local/google-cloud-sdk/bin/bq /usr/local/bin/bq && \
+    rm -rf /root/.cache
 
 # Install Terraform from HashiCorp RPM repository
 RUN dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && \
