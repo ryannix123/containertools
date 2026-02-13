@@ -66,12 +66,8 @@ RUN curl -fsSL https://rpm.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Install Azure CLI and Google Cloud CLI
-RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
-    echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo && \
-    dnf install -y --setopt=install_weak_deps=False --nodocs azure-cli && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf && \
+# Install Azure CLI (using universal install script - yum repo lacks ARM64 packages) and Google Cloud CLI
+RUN curl -L https://aka.ms/InstallAzureCli | bash && \
     curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=/usr/local && \
     ln -s /usr/local/google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud && \
     ln -s /usr/local/google-cloud-sdk/bin/gsutil /usr/local/bin/gsutil && \
