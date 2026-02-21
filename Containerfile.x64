@@ -30,6 +30,16 @@ RUN dnf install -y epel-release dnf-plugins-core && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
+# Install certbot and common DNS plugins
+# Certbot is used for Let's Encrypt certificate management.
+# Additional plugins (e.g. certbot-dns-cloudflare) can be installed via pip as the tools user.
+RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
+      certbot \
+      python3-certbot-dns-route53 \
+      python3-certbot-dns-cloudflare && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+
 # Install Java 21 (latest LTS) and Maven
 RUN dnf install -y --setopt=install_weak_deps=False --nodocs \
       java-21-openjdk java-21-openjdk-devel maven && \
@@ -143,6 +153,13 @@ RUN FORTIO_VERSION=$(curl -s https://api.github.com/repos/fortio/fortio/releases
 
 # Setup user directories and configure Podman for podman-in-podman
 RUN mkdir -p /home/tools/local-storage /home/tools/.config/containers /home/tools/.local/share/containers/storage && \
+    # Create .ssh directory with correct permissions for runtime key mounts
+    mkdir -p /home/tools/.ssh && \
+    chmod 700 /home/tools/.ssh && \
+    # Create certbot working directories so the tools user can run certbot without root
+    mkdir -p /home/tools/letsencrypt/config \
+             /home/tools/letsencrypt/work \
+             /home/tools/letsencrypt/logs && \
     chown -R tools:tools /home/tools
 
 # Configure Podman storage to use vfs driver (works without --privileged)
