@@ -10,15 +10,19 @@ No more cluttering your Mac or Linux machine with CLIs, SDKs, and dependencies t
 ## Quick Start
 
 ```bash
-# Pull and run (auto-selects ARM or x86)
-podman run -it --name tools quay.io/ryan_nix/containertools:latest
+# Pull and run in the background (auto-selects ARM or x86)
+podman run -d --name tools quay.io/ryan_nix/containertools:latest sleep infinity
 
 # Or use the architecture-specific tags
-podman run -it --name tools quay.io/ryan_nix/containertools:arm   # Apple Silicon, ARM servers
-podman run -it --name tools quay.io/ryan_nix/containertools:x86   # Intel/AMD
+podman run -d --name tools quay.io/ryan_nix/containertools:arm sleep infinity   # Apple Silicon, ARM servers
+podman run -d --name tools quay.io/ryan_nix/containertools:x86 sleep infinity   # Intel/AMD
 ```
 
-That's it. You're in a fully-equipped environment.
+Then drop into a shell whenever you need it:
+
+```bash
+podman exec -it tools /bin/bash
+```
 
 ## What's Inside
 
@@ -42,10 +46,10 @@ Mount a volume to keep your files, configs, and credentials across sessions:
 # Create a persistent volume
 podman volume create tools-data
 
-# Run with the volume mounted
-podman run -it --name tools \
+# Run in the background with the volume mounted
+podman run -d --name tools \
   -v tools-data:/home/tools/local-storage \
-  quay.io/ryan_nix/containertools:latest
+  quay.io/ryan_nix/containertools:latest sleep infinity
 ```
 
 Your data lives in `/home/tools/local-storage` inside the container.
@@ -58,14 +62,14 @@ podman cp ~/my-kubeconfig tools:/home/tools/local-storage/
 podman cp ~/projects/my-ansible-playbook tools:/home/tools/local-storage/
 ```
 
-## Reconnect to Your Container
+## Get a Shell
 
 ```bash
-# If you exit, your container keeps running. Reattach with:
-podman attach tools
+# Open an interactive shell into the running container
+podman exec -it tools /bin/bash
 
-# Or start it if stopped:
-podman start -ai tools
+# Start the container if it's stopped, then exec in
+podman start tools && podman exec -it tools /bin/bash
 ```
 
 ## Build It Yourself
@@ -84,12 +88,14 @@ podman build -t containertools -f ./Containerfile.$(uname -m | sed 's/x86_64/x86
 
 ### Option 1 — Runtime volume mount (recommended for interactive use)
 
-Mount your key at run time. Nothing sensitive ever touches the image. The `.ssh` directory is pre-created in the image with `700` permissions so the mount lands correctly.
+Mount your key when starting the container. Nothing sensitive ever touches the image. The `.ssh` directory is pre-created in the image with `700` permissions so the mount lands correctly.
 
 ```bash
-podman run -it --rm \
+podman run -d --name tools \
   -v $HOME/.ssh/id_rsa:/home/tools/.ssh/id_rsa:ro,Z \
-  quay.io/ryan_nix/containertools:latest
+  quay.io/ryan_nix/containertools:latest sleep infinity
+
+podman exec -it tools /bin/bash
 ```
 
 > The `:Z` flag applies the correct SELinux label on RHEL/Fedora hosts. Use `:z` (lowercase) for shared mounts across multiple containers.
@@ -145,10 +151,12 @@ spec:
 Forward your local SSH agent into the container so no key file is ever present inside it at all:
 
 ```bash
-podman run -it --rm \
+podman run -d --name tools \
   -v $SSH_AUTH_SOCK:/tmp/ssh_auth.sock:Z \
   -e SSH_AUTH_SOCK=/tmp/ssh_auth.sock \
-  quay.io/ryan_nix/containertools:latest
+  quay.io/ryan_nix/containertools:latest sleep infinity
+
+podman exec -it tools /bin/bash
 ```
 
 ---
@@ -168,7 +176,7 @@ The image ships with `certbot`, `certbot-dns-route53`, and `certbot-dns-cloudfla
 Credentials are sourced from environment variables or an AWS profile — no config file needed.
 
 ```bash
-podman run -it --rm \
+podman run -d --name certbot \
   -e AWS_ACCESS_KEY_ID=<your-key-id> \
   -e AWS_SECRET_ACCESS_KEY=<your-secret> \
   -e AWS_DEFAULT_REGION=us-east-1 \
@@ -180,6 +188,9 @@ podman run -it --rm \
     --work-dir    /home/tools/letsencrypt/work \
     --logs-dir    /home/tools/letsencrypt/logs \
     -d your.domain.com
+
+# Follow the output
+podman logs -f certbot
 ```
 
 Mount `~/letsencrypt` from your host so issued certificates persist between container runs.
@@ -194,7 +205,7 @@ dns_cloudflare_api_token = <your-cloudflare-api-token>
 ```
 
 ```bash
-podman run -it --rm \
+podman run -d --name certbot \
   -v $HOME/cloudflare.ini:/home/tools/cloudflare.ini:ro,Z \
   -v $HOME/letsencrypt:/home/tools/letsencrypt:Z \
   quay.io/ryan_nix/containertools:latest \
@@ -205,18 +216,23 @@ podman run -it --rm \
     --work-dir    /home/tools/letsencrypt/work \
     --logs-dir    /home/tools/letsencrypt/logs \
     -d your.domain.com
+
+# Follow the output
+podman logs -f certbot
 ```
 
 ### Renewing certificates
 
 ```bash
-podman run -it --rm \
+podman run -d --name certbot-renew \
   -v $HOME/letsencrypt:/home/tools/letsencrypt:Z \
   quay.io/ryan_nix/containertools:latest \
   certbot renew \
     --config-dir  /home/tools/letsencrypt/config \
     --work-dir    /home/tools/letsencrypt/work \
     --logs-dir    /home/tools/letsencrypt/logs
+
+podman logs -f certbot-renew
 ```
 
 ### Loading a certificate into OpenShift
@@ -234,7 +250,7 @@ oc create secret tls my-tls-secret \
 If you need a plugin not included in the image (e.g. `certbot-dns-google`), install it at runtime:
 
 ```bash
-pip3 install --user certbot-dns-google
+podman exec -it tools pip3 install --user certbot-dns-google
 ```
 
 Or add it to the `pip3 install --user` block in the Containerfile before building.
